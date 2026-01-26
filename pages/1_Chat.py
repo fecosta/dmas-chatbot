@@ -24,11 +24,23 @@ claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
 
 
+def _user_email(u):
+    if isinstance(u, dict):
+        return u.get("email") or (u.get("user_metadata") or {}).get("email") or u.get("id") or "unknown"
+    return getattr(u, "email", None) or getattr(u, "id", None) or "unknown"
+
+
 def sidebar_auth():
     st.sidebar.header("Login")
     if st.session_state.get("user"):
         u = st.session_state["user"]
-        st.sidebar.success(f"Logged in: {u['email']}")
+        # Normalize older session shapes
+        if not isinstance(u, dict):
+            st.session_state["user"] = {"id": getattr(u, "id", None), "email": getattr(u, "email", None)}
+            u = st.session_state["user"]
+        if "email" not in u:
+            u["email"] = _user_email(u)
+        st.sidebar.success(f"Logged in: {u.get('email') or u.get('id')}")
         if st.sidebar.button("Logout"):
             auth_sign_out()
             st.session_state.clear()
@@ -39,10 +51,17 @@ def sidebar_auth():
     password = st.sidebar.text_input("Password", type="password")
     if st.sidebar.button("Login"):
         res = auth_sign_in(email, password)
-        user = {"id": res["user"].id, "email": res["user"].email}
+        u = res["user"]
+        user = {
+            "id": getattr(u, "id", None),
+            "email": getattr(u, "email", None) or (getattr(u, "user_metadata", None) or {}).get("email") or email,
+        }
+        if not user["id"]:
+            st.sidebar.error("Login failed: missing user id from Supabase.")
+            return
         st.session_state["user"] = user
-        profile = ensure_profile(user["id"], user["email"])
-        st.session_state["role"] = profile.get("role", "user")
+        profile = ensure_profile(user["id"], user.get("email") or email)
+        st.session_state["role"] = (profile or {}).get("role", "user")
         st.rerun()
 
 
