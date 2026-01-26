@@ -1,5 +1,6 @@
 streamlit
-anthropic
-openai
+anthropic>=0.34,<1
+openai>=1.0,<2
 pypdf
 numpy
+pandas

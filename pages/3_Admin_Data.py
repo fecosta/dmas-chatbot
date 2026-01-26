@@ -13,15 +13,16 @@ from core.utils import ensure_dirs, safe_filename, sha256_bytes
 from core.pdf_extract import build_sections_from_pdf, Section
 from core.index_store import store_structured_index, clear_index_cache, load_structured_index
 
-user_id = st.session_state.get("auth_user_id")
+
 st.set_page_config(page_title="Admin — Data", page_icon="📄", layout="wide")
 
 db.init_db()
 bootstrap_admin_if_needed()
 
 # Sidebar auth
-admin = render_sidebar_auth()
-require_admin()
+render_sidebar_auth()
+admin = require_admin()
+user_id = admin["id"]
 
 cfg = load_config()
 DATA_DIR = get_data_dir()

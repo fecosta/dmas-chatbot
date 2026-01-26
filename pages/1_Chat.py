@@ -56,7 +56,7 @@ with st.sidebar:
         new_title = st.text_input("Rename", value=labels[sel])
         if st.button("Save title"):
             con = db.connect()
-            con.execute("UPDATE conversations SET title=?, updated_at=? WHERE id=?", (new_title or "Chat", __import__('core.utils').utils.utc_now_iso(), ids[sel]))
+            con.execute("UPDATE conversations SET title=?, updated_at=? WHERE id=?", (new_title or "Chat", utc_now_iso(), ids[sel]))
             con.commit(); con.close()
             st.rerun()
         if st.button("Archive"):
