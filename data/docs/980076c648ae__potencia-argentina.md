@@ -1,0 +1,4 @@
+# Potencia Argentina
+
+“Buscamos inspirar a una nueva generación de líderes de todo el espectro político, conectados entre sí y orientados al hacer, para fortalecer la democracia, aumentar los niveles de diálogo político y mejorar la implementación de política pública en Argentina. Con este objetivo, nos propusimos construir una comunidad extensa y federal, que forme y conecte a las nuevas generaciones de líderes políticos argentinos reconocidos por su compromiso, integridad y capacidad para enfrentar y proponer soluciones a los principales problemas del país y restaurar la confianza en la democracia.”
+Santiago Bermudez - CEO Potencia Argentina +

@@ -1,0 +1,39 @@
+# Teoría de cambio
+
+¿QUÉ? 
+Piensa en tu Teoría del Cambio (TdC) como un mapa : muestra cómo pasarás de dónde estás a dónde quieres llegar. Para una incubadora de liderazgo político, tu TdC traza el camino desde la identificación de líderes prometedores hasta la construcción de las habilidades, redes y valores necesarios para fortalecer la democracia. Conecta las actividades que realizas—como programas de capacitación, mentorías y creación de redes—con el impacto que buscas lograr: líderes éticos y efectivos que generen confianza y ofrezcan resultados. Con una TdC clara, no solo defines tus objetivos, sino que también trazas los pasos para alcanzarlos, asegurándote de que cada acción contribuya a tu misión.
+¿CÓMO? 
+1. Define el problema que buscas resolver 
+Identifica claramente el desafío principal que tu incubadora aborda. ¿Qué obstáculos específicos enfrentan las democracias en tu contexto? ¿Qué brechas existen en el liderazgo político?
+Nota: Es importante diseñar tu TdC desde el principio, incluso antes de comenzar, esbozando sus componentes clave. Por supuesto, esta evolucionará y mejorará con el tiempo, pero siempre es más fácil perfeccionar un esquema inicial que empezar desde cero.
+2. Establece tu meta final (impacto esperado) 
+Visualiza el cambio a largo plazo que quieres lograr. Por ejemplo: una democracia más fuerte y resiliente, liderada por funcionarios éticos y efectivos.
+DEFINICIÓN: Impacto: El impacto es el cambio transformador que esperas lograr, como una democracia más resiliente y responsable, liderada por individuos comprometidos con el bien común. 
+Nota: Aunque el impacto es lo último que vas a lograr, una vez definido el problema que buscas resolver, muchas veces ayuda trabajar desde atrás hacia adelante, determinando primero hacia donde quieres ir, y luego definir cómo vas a llegar.
+3. Identifica las causas raíz del problema 
+Profundiza en las razones detrás del desafío. Por ejemplo: ¿Por qué faltan líderes éticos? ¿Qué barreras enfrentan los ciudadanos para acceder a posiciones de liderazgo?
+4. Diseña tus actividades clave (insumos y acciones ) 
+Detalla las iniciativas que implementará tu incubadora, como programas de capacitación, mentorías, simulaciones de liderazgo, creación de redes y producción de evidencia académica.
+DEFINICIÓN: Insumos: Son los recursos, capacidades y herramientas que necesitas para llevar a cabo tus actividades. Esto incluye financiamiento, personal capacitado, materiales educativos, tecnologías, y alianzas estratégica
+5. Establece los resultados esperados (corto y mediano plazo) 
+Para diseñar una Teoría del Cambio sólida, es esencial diferenciar entre productos y resultados :
+Productos: Estos son los resultados inmediatos y tangibles que tus actividades generan. Responden a la pregunta: ¿Qué logramos hacer? Por ejemplo: 
+Líderes capacitados mediante talleres. 
+Redes de mentores creadas. 
+Materiales educativos desarrollados. 
+Eventos y foros organizados para fortalecer alianzas.
+Resultados: Representan los cambios que estos productos generan en el corto y mediano plazo. Responden a la pregunta: ¿Qué cambió como consecuencia de nuestras actividades? 
+Corto plazo: Cambios en habilidades, actitudes y conocimientos, como líderes mejor preparados para tomar decisiones éticas y estratégicas. 
+Mediano plazo: Cambios más sustanciales, como el aumento en el número de líderes elegidos que promuevan políticas más inclusivas, o una mayor confianza de la ciudadanía en las instituciones democráticas. 
+NOTA: Dividir los resultados entre productos y resultados te ayuda a distinguir entre lo que haces y el impacto que buscas generar. Esta distinción es clave para diseñar indicadores y monitorear el progreso de tu proyecto.
+6. Conecta tus actividades con el impacto a través de un camino lógico 
+Muestra cómo cada paso contribuye al logro de tu meta. Por ejemplo, ¿cómo un taller específico prepara a un líder para una elección competitiva?
+Nota: Un enunciado “si... entonces” es una herramienta útil para vincular tus actividades con los resultados esperados de manera clara y lógica. Este tipo de declaración establece una relación de causa y efecto entre lo que haces y el impacto que esperas lograr. Por ejemplo: " Si proporcionamos formación en liderazgo ético, entonces los participantes estarán mejor preparados para competir en elecciones de manera responsable y efectiva." 
+Debes escribir un “si... entonces” una vez que hayas definido claramente tus productos y los resultados que esperas alcanzar. Este enunciado te ayudará a visualizar cómo cada actividad contribuye directamente al cambio que buscas. Es una manera de estructurar la lógica de tu TdC, asegurándote de que haya una conexión clara entre lo que haces y los resultados que quieres lograr.
+Nota: Es fundamental entender las suposiciones que estás haciendo mientras desarrollas el flujo lógico de tu TdC. Está bien no tener todas las respuestas al principio, pero asegúrate de citar evidencia donde la tengas y señala claramente dónde tu TdC carece de apoyo empírico. Con el tiempo, deberás llenar estos espacios en blanco, y lo lograrás mediante el desarrollo de una estrategia sólida de monitoreo y evaluación (¡consulta nuestro playbook sobre eso!).
+7. Crea indicadores para medir el progreso 
+Define cómo evaluarás si estás avanzando hacia tu objetivo. Usa métricas concretas como el número de líderes capacitados, tasas de éxito electoral o niveles de confianza pública en sus instituciones.
+Nota: Definir estos indicadores desde el principio es crucial, ya que te permitirá recolectar la información y los datos esenciales para evaluar el progreso de tu Teoría del Cambio. Por ejemplo, un indicador útil podría ser recopilar datos en tu encuesta de entrada antes de que los participantes comiencen el programa. Esta información, como sus niveles de conocimiento sobre gobernanza o sus habilidades de liderazgo, no se puede obtener más tarde, por lo que es importante capturarla desde el inicio. Así podrás medir el cambio en estas áreas a medida que avanzan en el programa, permitiéndote evaluar con precisión el impacto de tus actividades.
+8. Refina y ajusta con el tiempo 
+A medida que implementas tu teoría, evalúa su efectividad y ajústala. Aprende de la experiencia y de los datos para perfeccionar tu modelo y maximizar su impacto.
+Nota: Una herramienta sumamente valiosa es compartir tu TdC en proceso con actores clave y expertos que conozcan tu contexto, para que puedan darte retroalimentación.

@@ -1,0 +1,95 @@
+# Identificar
+
+¿QUÉ? 
+Este playbook te guiará en el proceso de selección de participantes para tu programa, asegurando que identifiques y atraigas a los mejores talentos con el potencial de influir positivamente en el entorno político. Aquí te mostraremos cómo garantizar un proceso de selección justo, transparente y orientado a identificar tanto el talento individual como la capacidad de colaboración en grupo.
+¿CÓMO? 
+1. RECUERDA QUE NO SOLO ESTÁS SELECCIONANDO INDIVIDUOS; ESTÁS COMPONIENDO UN GRUPO 
+Al seleccionar participantes, recuerda que no se trata solo de cuán capacitado está cada uno individualmente, sino de cómo el grupo puede interactuar y aprender entre sí. Un grupo diverso enriquecerá el aprendizaje colectivo, reducirá la polarización afectiva y fortalecerá el impacto del programa.
+Consejos: 
+Pluralismo ideológico : Es fundamental para reducir la polarización. A través de la selección de personas con diferentes perspectivas políticas, podrás enseñar a los participantes a colaborar con quienes piensan diferente y construir amistades cívicas entre líderes políticos de diversos contextos. 
+Es normal que en este punto te preguntes: ¿Cómo definir qué es la derecha, el centro y la izquierda? ¿Y cómo clasificar a los partidos políticos?  Cada país y escuela hacen eso de maneras distintas. Algunas, cuentan con un grupo de académicos y expertos en partidos políticos y sistemas electorales que dialogan y llegan a un consenso sobre el significado de cada uno de estos conceptos (como una mesa técnica), caso de Ocupar la Política (Colombia). Otros, utilizan las definiciones directamente ofrecidas por los partidos a los tribunales electorales!  
+Diversidad de experiencias y saberes : Mezclar líderes con distintos conocimientos es crucial. Por ejemplo, incluir tanto a líderes territoriales como a expertos en políticas públicas, además de personas con diferentes niveles de escolaridad, enriquece el intercambio y el aprendizaje dentro del grupo. 
+Diversidad demográfica : Asegúrate de que haya representación de diferentes géneros, razas, edades y contextos socioeconómicos para fomentar un grupo inclusivo y representativo de la sociedad a la que aspiras impactar. 
+Diversidad en nivel de competitividad electoral : Selecciona una mezcla de personas que estén en etapas iniciales de preparación política y aquellas que ya tengan una base electoral o mayor preparación para competir. Esta diversidad permitirá que el grupo crezca junto y se inspire mutuamente. Normalmente, los programas buscan candidatos que, aunque no estén completamente listos, sean mínimamente viables para mostrar resultados en el piloto e inspirar a la próxima cohorte. 
+Diseñar el perfil del grupo antes de analizar a los candidatos facilita una mejor selección : Si tienes claro de antemano los porcentajes o características clave de los diferentes tipos de liderazgo que buscas, podrás seleccionar de manera más precisa a los mejores candidatos dentro de cada categoría, manteniendo la diversidad del grupo. Por ejemplo, si tu objetivo es que el 50% de la cohorte sea de mujeres, primero identificarás a las mujeres con los perfiles que más se alineen con los objetivos del programa y luego las compararás entre sí. De esta forma, estarás comparando "comparables", lo que te permitirá seleccionar a los mejores dentro de cada categoría. Cada organización hace eso de maneras distintas.
+2. ESTRUCTURE UN PROCESO QUE IDENTIFIQUE LAS COMPETENCIAS CLAVES EN LOS PARTICIPANTES 
+Paso 1: Defina los pre-requisitos de los participantes 
+Siempre debes tener muy claro cuál es el perfil y los requisitos previos de los participantes que deseas en tu programa. Esto facilitará y mejorará el enfoque de las diferentes estrategias de selección en cada fase del proyecto. Algunos de los criterios más comunes incluyen:
+Tener mínimo 18 años de edad; 
+Tener intenciones de ser candidato o candidata en las próximas elecciones; 
+Paso 2: Definir competencias clave 
+Utiliza una matriz de competencias para guiar tu evaluación de los candidatos. Las competencias más comunes en nuestra Red incluyen:
+Categoria Competencia Definición Compromiso con la gobernanza democrática Valores democráticos Defienden la democracia protegiendo instituciones, garantizando libertades y promoviendo una gobernanza inclusiva con acciones concretas. Integridad y ética Reputación intachable (sin antecedentes criminales) y compromiso con la transparencia, la rendición de cuentas y la ética pública. Búsqueda de impacto colectivo Visión y propósito Comprenden la acción política como un valor. Tienen visión a largo plazo, una agenda de impacto clara y la capacidad de transformar ideas en cambios sostenibles. Representación Abogan activamente por el grupo que representan y garantizan que distintos grupos tengan voz en la toma de decisiones. Historial de generación de cambio Demuestran su impacto a través de acciones concretas, como la formulación de políticas, la movilización social o la incidencia en el debate público. Constructores de consenso Apertura al aprendizaje entre pares y redes de apoyo Construyen poder colectivamente, participando en redes de apoyo, intercambiando conocimientos y colaborando con otros líderes. Estrategias contra la polarización Generan espacios de diálogo, superan divisiones ideológicas y promueven consensos para reducir la polarización. Comunicador Transmiten sus ideas y principios con claridad, asegurando que su mensaje llegue de manera efectiva a diferentes audiencias. Movilizadores Conexión con sus comunidades Se relacionan con la ciudadanía a través de redes sociales, grupos de interés o bases electorales para fortalecer su liderazgo. Viabilidad política Son candidatos viables que navegan estructuras partidarias, construyen alianzas estratégicas y aseguran financiamiento para su agenda. Influencia Moldean narrativas, ocupan posiciones de autoridad y lideran el discurso público a través de los medios y espacios institucionales. 
+Veja + 
+Competitividad Electoral 
+Algunos programas también incluyen un análisis sobre la competitividad electoral del candidato para garantizar una cohorte equilibrada, con personas en distintos niveles de madurez y conocimiento político. La composición de cada grupo varía según el programa, pero recomendamos una distribución aproximada de:
+30% de participantes con poca madurez política, considerados como pipeline (potenciales futuros líderes). 
+50% en un momento de inflexión en sus carreras , que representan el público objetivo del programa. 
+20% de personas altamente competitivas electoralmente , con más experiencia que el foco central del programa. 
+Esta mezcla estratégica permite que los perfiles más avanzados aporten capital social a los menos experimentados, generando nuevas alianzas dentro del programa. A su vez, la trayectoria de los más maduros fortalece la credibilidad de los emergentes, mientras que los líderes en transición refuerzan la marca de renovación para los más experimentados.
+En otras palabras, el grupo se retroalimenta a lo largo del programa, creando un ecosistema de aprendizaje, crecimiento y fortalecimiento mutuo. 
+Con base en esa matriz puedes detallar los diferentes criterios y escalas para evaluar las habilidades. 
+EJEMPLOS DE MATRIX DE SELECCIÓN 
++ Costa Rica , RenovaBR  , +Uruguay 
+Paso 3: Diseña etapas que apoyen la identificación de esas competencias 
+Elabora un proceso de selección en embudo que permita mapear las características clave de los solicitantes, asegurando la construcción de una cohorte sólida y equilibrada.Si hay un volumen alto de postulaciones, puedes crear diferentes fases que midan el compromiso y evalúen las competencias desde diversos ángulos. Las fases más comunes incluyen:
+Formulario de inscripción : Mapea información demográfica y preferencias políticas. 
+Video de presentación : Evalúa el propósito, habilidades de comunicación y valores fundamentales. 
+Entrevistas y paneles : Profundiza en la motivación, competencias clave y habilidades de liderazgo. 
+Pruebas especializadas (opcional) : Algunas organizaciones incluyen evaluaciones adicionales, como pruebas de flexibilidad moral o simulaciones para evaluar las habilidades en situaciones complejas. 
++ Desenho etapas funil  
+Consejos:  
+Construye un formulario poderoso 
+Aprovecha el formulario no solo para obtener datos demográficos y preferencias políticas, sino también para recolectar una línea de base sobre las percepciones iniciales de los participantes en temas clave que deseas desarrollar en ellos. Esto será valioso para los informes de impacto posteriores.
+Recuerda que no todos los inscritos podrán declarar sus preferencias partidarias 
+Al ingresar al programa, muchos aún no estarán afiliados a un partido. Utiliza el proceso para preguntar sobre sus opiniones en temas concretos y, si es necesario, clasifica tú mismo su orientación ideológica (complementaria a la autodeclarada).
+Veja aqui os formulários utilizados pela nossa rede  
+FORMULÁRIO DE POSTUACIÓN RECAMBIO 
+FORMULÁRIO DE POSTULACIÓN OCUPAR LA POLÍTICA 
+FORMULÁRIO DE POSTULACIÓN A +COSTA RICA 
+FORMULÁRIO CHATBOT RENOVABR 
+3. Convierte a los interesados en aplicantes 
+Con un proceso demasiado largo, podrías perder candidatos en el camino. Intenta mantener la selección lo más ágil posible y envía notificaciones periódicas para recordar a los participantes que continúen completando el formulario. Normalmente, hay una gran caída entre los postulantes iniciales (interesados) y aquellos que completan el formulario. Una buena tasa de conversión es superior al 65%. Las organizaciones suelen implementar empujes e incentivos para que los postulantes avancen en el proceso. Recuerda: es más fácil lograr que alguien complete el formulario que hacer que empiece desde cero. Este enfoque puede ser intencional con grupos minoritarios. Para facilitar el proceso, puedes programar envíos automáticos de correos electrónicos y dedicar parte de tu equipo para trabajar exclusivamente en contacto 1:1/ 
+Además, es crucial que los candidatos tengan visibilidad de todo el proceso antes de empezar (a través de una guía o convocatoria de selección).
+PROCESSO SELETIVO RBR - ELEIÇÕES 2024.pdf Guía para aplicar y postularse al Programa de Formación +Costa Rica..docx 
+4. Evaluación constante 
+Aunque el proceso dure varios meses, comienza a evaluar desde el primer día a todos los postulantes que completen el formulario. Esto te permitirá verificar, además del volumen, si la calidad de los postulantes es adecuada. También te ayudará a redirigir esfuerzos y determinar si es necesario realizar búsquedas activas ( head hunting ).
+5. Ten claridad sobre las preguntas en cada etapa y qué competencia están evaluando 
+Cada fase debe contribuir a la identificación de las características clave del solicitante. Diseña preguntas que te ayuden a conocer los perfiles en profundidad y evita preguntas genéricas que solo alargan el proceso y añaden trabajo innecesario para los evaluadores. En procesos grandes, es común contar con equipos de evaluación compuestos por múltiples participantes. El diseño de la evaluación debe estar bien estructurado para evitar discrepancias. Cuanto más específicas sean las preguntas y los criterios, menor será el margen de error. Es importante tener claro qué estás buscando con cada pregunta, no sólo en términos de la competencia evaluada, sino también en cuanto a las “respuestas ideales”, estableciendo parámetros claros de puntuación. Además, es crucial realizar entrenamientos frecuentes y alineaciones con los evaluadores para garantizar la consistencia.
+PS: Para garantizar la integridad de los participantes, puede ser útil solicitar un documento de antecedentes penales a los finalistas del proceso de selección. 
+6. Automatiza parte de la evaluación: crea y asigna puntajes a cada uno de los criterios de selección. Esto hará que el proceso sea más eficiente y permitirá realizar la selección de manera mucho más rápida.
+7. ¡Pero confíen en la sabiduría humana! Contar con un equipo territorial que conozca el contexto político le dará un valor añadido a tu proyecto, ya que tendrán la capacidad de identificar liderazgos idóneos en el proceso de selección.
+8. ¡No olvides revisar las redes sociales de todos los seleccionados antes de la aprobación final! Asegúrate de que tus candidatos no difundan noticias falsas.
+3. HAZ QUE EL PROCESO SEA UNA EXPERIENCIA INSPIRADORA Y DE APRENDIZAJE PARA EL PARTICIPANTE 
+Desde el primer punto de contacto, el proceso de selección debe ser tanto formativo como inspirador, incluso para aquellos que no sean seleccionados al final. Recuerda que los postulantes serán grandes embajadores de tu marca. Respetarlos y brindarles una experiencia positiva no solo es crucial para la democracia, sino también una pieza clave para la reputación de tu programa.
+Consejos: 
+Comunicación motivadora : Mantén siempre un tono positivo y alentador en todas las interacciones, especialmente al comunicar una negativa. No querrás que esta experiencia refuerce la idea de que “la vida pública no es para ellos”. La política es para todos. Sé atento, empático y utiliza el nombre de las personas en todas las comunicaciones. Este toque personal demuestra respeto y cuidado hacia los postulantes. 
+Fases formativas : Idealmente, cada etapa del proceso de selección debería ofrecer algo valioso a los candidatos, independientemente del resultado. Puedes, por ejemplo, brindarles la oportunidad de reflexionar sobre su liderazgo, proporcionarles un marco para evaluar su competitividad electoral, o incluso enseñarles más sobre el proceso político a través de simulaciones. Esto no solo enriquece su experiencia, sino que también los deja con herramientas útiles para el futuro. 
+4. INFRAESTRUCTURA DIGITAL DE SELECCIÓN O TECNOLOGÍA 
+(para más información sobre eso, visite el Artigo que nuestra equipo de tecnología desarolló)!
+El éxito de cualquier proceso de selección depende en gran medida de la infraestructura técnica que lo respalda. Contar con las herramientas adecuadas no solo garantiza una experiencia fluida para los postulantes, sino que también facilita la gestión eficiente de los datos, automatiza tareas y asegura que todo el proceso sea transparente y organizado. Aquí sugerimos una infraestructura mínima adecuada para equipos que no tengan mucha familiaridad con la tecnología.
+Consejos:  
+Sitio web (punto de inicio): 
+Necesitarás un sitio web donde los candidatos puedan iniciar el proceso de postulación. Asegúrate de incluir todos los pasos de selección en la página para que los postulantes tengan claridad desde el principio sobre cómo será el proceso.
+Generador de formularios (para recolectar y procesar solicitudes): 
+Elegir el generador de formularios adecuado es crucial. Nosotros recomendamos JotForm por su excelente combinación de costo y características, como la capacidad de guardar borradores, soporte multilingüe, integraciones con CRMs y soporte multimedia. Otras opciones incluyen: 
+SurveyMonkey : Aunque no tenemos tanta experiencia con esta plataforma, podría ser una buena opción. 
+TypeForm : Es visualmente atractivo y con muchas funciones, pero puede ser más caro.
+Google Forms : Gratuito e intuitivo, pero con pocas funciones y limitadas integraciones, por lo que no lo recomendamos.
+WhatsApp: Algunas organizaciones logran realizar todo el proceso de selección a través de chatbots en WhatsApp, lo que resulta más accesible para los postulantes. Sin embargo, el establecimiento y mantenimiento de estas herramientas pueden ser costosos y requieren un equipo especializado en tecnología.
+CRM (gestión de contactos, fuente de verdad): 
+Para gestionar los datos de los postulantes y automatizar el proceso, HubSpot es una excelente opción debido a su amplia funcionalidad, que incluye gestión de redes sociales, integración con plataformas como WhatsApp y automatización de correos electrónicos. Sin embargo, puede ser costoso y a menudo rígido en términos de personalización.  
+En general, recomendamos utilizar herramientas que ya hayan sido probadas y establecidas en el mercado, ya que las herramientas más nuevas tienden a tener más errores y menos integraciones. Asegúrate de seleccionar un CRM que se ajuste a las necesidades de tu programa, priorizando soluciones confiables que ofrezcan integración sencilla y soporte técnico adecuado.
+Plataforma de WhatsApp API (soporte a lo largo del proceso de selección):
+El uso de una API de WhatsApp puede ser clave para mantener una comunicación fluida con los postulantes durante el proceso. Necesitarás una cuenta de Meta Business aprobada y asociada a un número de negocio de WhatsApp. La automatización de flujos de mensajes puede llevar tiempo, pero es factible integrar herramientas como Turn.io, lo cual podría implementarse en unas semanas si tienes la documentación necesaria para organizaciones sin fines de lucro. 
+Integraciones Técnicas: Con tu CRM como fuente de verdad, deberás configurar las siguientes integraciones: 
+Website -> CRM: Configura tu sitio web para que los datos de nuevos postulantes se sincronicen automáticamente con tu base de datos.
+Formularios -> CRM: Las nuevas inscripciones o borradores de formularios deben ser registrados automáticamente en el CRM.
+Automatizaciones del CRM: Configura campañas de correos automáticos y notificaciones para mantener a los postulantes informados a lo largo del proceso.
+Soporte vía WhatsApp: Una vez que tengas tu cuenta de WhatsApp Business configurada, podrás automatizar flujos de mensajes para brindar asistencia rápida y eficiente a los postulantes. 
+Las automatizaciones en los procesos de selección son poderosas, pero tienen sus límites: 
+Consideramos que la inteligencia artificial disponible en el mercado, al momento de escribir este playbook, aún no está completamente lista para ser implementada en un proceso de este tipo sin ajustes significativos. Se necesitaría una considerable adaptación para su implementación efectiva. 
+Nuestra Red cree en la importancia del contacto humano profundo y recomienda no automatizar etapas críticas del proceso de selección que son clave para conocer en profundidad las intenciones de cada participante. Muchas veces, un currículum no refleja todo el potencial de la persona que está aplicando. 
+Consejos adicionales: 
+PS1: Muchas herramientas tecnológicas ofrecen descuentos para organizaciones sociales. Antes de contratar cualquier servicio, busca descuentos en tu país. Una buena fuente para encontrar estas oportunidades es TechSoup .
+PS2: En algunos casos, podrías considerar el uso de sistemas especializados como los ATS (Applicant Tracking Systems) , diseñados específicamente para la gestión de reclutamiento y selección. Sin embargo, ten en cuenta que estas herramientas suelen ser más costosas y requieren configuraciones complejas. Además, muchos ATS no ofrecen soluciones white label, lo que puede limitar la personalización según las necesidades específicas de tu programa. Dependiendo de tu presupuesto y complejidad del proceso, podrías optar por alternativas más sencillas y flexibles que se adapten mejor a tu estructura.
