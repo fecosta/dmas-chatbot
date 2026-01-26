@@ -1,148 +1,158 @@
 import os
 import streamlit as st
+from anthropic import Anthropic
+from openai import OpenAI
 
-from core import db
-from core.auth import render_sidebar_auth, require_login
-from core.config import load_config
-from core.index_store import load_structured_index
-from core.retrieval import retrieve_sections
-from core.llm import build_system_prompt, build_user_turn, call_claude
-from core.utils import utc_now_iso
+from core.supabase_client import (
+    auth_sign_in,
+    auth_sign_out,
+    ensure_profile,
+    get_profile,
+    list_documents,
+    rpc_match_sections,
+    svc,
+)
 
-st.set_page_config(page_title="D+ Chat", page_icon="🗳️", layout="wide")
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-3-5-sonnet-20240620")  # change if you prefer
 
-db.init_db()
-from core.auth import bootstrap_admin_if_needed
-bootstrap_admin_if_needed()
+oai = OpenAI(api_key=OPENAI_API_KEY)
+claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-with st.sidebar:
-    st.markdown("## D+ Chatbot")
-    render_sidebar_auth()
+st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
 
-user = require_login()
-cfg = load_config()
 
-st.title("Chat")
-st.caption("Claude chat + structured RAG index (built on upload).")
+def sidebar_auth():
+    st.sidebar.header("Login")
+    if st.session_state.get("user"):
+        u = st.session_state["user"]
+        st.sidebar.success(f"Logged in: {u['email']}")
+        if st.sidebar.button("Logout"):
+            auth_sign_out()
+            st.session_state.clear()
+            st.rerun()
+        return
 
-# Conversations sidebar
-with st.sidebar:
-    st.markdown("---")
-    st.markdown("### Conversations")
-    if st.button("+ New conversation"):
-        cid = db.create_conversation(user["id"], "New chat")
-        st.session_state["active_conversation_id"] = cid
+    email = st.sidebar.text_input("Email")
+    password = st.sidebar.text_input("Password", type="password")
+    if st.sidebar.button("Login"):
+        res = auth_sign_in(email, password)
+        user = {"id": res["user"].id, "email": res["user"].email}
+        st.session_state["user"] = user
+        profile = ensure_profile(user["id"], user["email"])
+        st.session_state["role"] = profile.get("role", "user")
         st.rerun()
 
-    convs = db.list_conversations(user["id"])
-    if not convs:
-        cid = db.create_conversation(user["id"], "New chat")
-        st.session_state["active_conversation_id"] = cid
-        st.rerun()
 
-    ids = [c["id"] for c in convs]
-    labels = [c["title"] for c in convs]
+def get_or_create_conversation(user_id: str):
+    if st.session_state.get("conversation_id"):
+        return st.session_state["conversation_id"]
 
-    current = st.session_state.get("active_conversation_id")
-    if current not in ids:
-        st.session_state["active_conversation_id"] = ids[0]
-        current = ids[0]
+    r = svc.table("conversations").insert({"user_id": user_id, "title": "Chat"}).execute()
+    cid = r.data[0]["id"]
+    st.session_state["conversation_id"] = cid
+    return cid
 
-    idx = ids.index(current)
-    sel = st.selectbox("Select", options=list(range(len(ids))), format_func=lambda i: labels[i], index=idx)
-    st.session_state["active_conversation_id"] = ids[sel]
 
-    with st.expander("Conversation actions"):
-        new_title = st.text_input("Rename", value=labels[sel])
-        if st.button("Save title"):
-            con = db.connect()
-            con.execute("UPDATE conversations SET title=?, updated_at=? WHERE id=?", (new_title or "Chat", utc_now_iso(), ids[sel]))
-            con.commit(); con.close()
-            st.rerun()
-        if st.button("Archive"):
-            db.archive_conversation(ids[sel])
-            st.session_state.pop("active_conversation_id", None)
-            st.rerun()
+def embed_query(q: str):
+    resp = oai.embeddings.create(model=EMBED_MODEL, input=q)
+    return resp.data[0].embedding
 
-# Persona hint
+
+sidebar_auth()
+user = st.session_state.get("user")
+if not user:
+    st.title("💬 D+ Chatbot")
+    st.info("Please log in to continue.")
+    st.stop()
+
+user_id = user["id"]
+role = st.session_state.get("role", "user")
+is_admin = role == "admin"
+
+st.title("💬 D+ Chatbot")
+
+# Document filter (optional)
+docs = list_documents(admin=is_admin, user_id=user_id)
+ready_docs = [d for d in docs if d["status"] == "ready"]
+
+doc_options = {f"{d['filename']} — {d['id'][:8]}": d["id"] for d in ready_docs}
+
 with st.sidebar:
-    st.markdown("---")
-    st.markdown("### Assistant focus")
-    persona = st.selectbox(
-        "Assistant focus",
-        [
-            "General Democracia+",
-            "Citizen participation & political engagement",
-            "Leadership & training",
-            "Public policy & institutional design",
-        ],
-        label_visibility="collapsed",
-        index=0,
+    st.subheader("Sources")
+    selected_labels = st.multiselect(
+        "Limit retrieval to selected documents",
+        options=list(doc_options.keys()),
+        default=[],
     )
-persona_hint = ""
-if persona == "Citizen participation & political engagement":
-    persona_hint = "Focus on citizen participation, political organizing, campaigns, parties, and civic engagement."
-elif persona == "Leadership & training":
-    persona_hint = "Focus on leadership development, team practices, skills, and training methodologies."
-elif persona == "Public policy & institutional design":
-    persona_hint = "Focus on policy design, democratic institutions, governance, and decision-making processes."
+    filter_doc_ids = [doc_options[x] for x in selected_labels] if selected_labels else None
+    top_k = st.slider("Retrieved chunks", 3, 15, 8)
 
-conversation_id = st.session_state.get("active_conversation_id")
+cid = get_or_create_conversation(user_id)
 
-# Load messages
-msgs = db.get_messages(conversation_id)
+# Load messages from DB
+msgs = (
+    svc.table("messages")
+    .select("*")
+    .eq("conversation_id", cid)
+    .order("created_at", desc=False)
+    .execute()
+    .data
+    or []
+)
+
 for m in msgs:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-user_input = st.chat_input("Ask about Democracia+ materials…")
-if user_input:
-    db.add_message(conversation_id, "user", user_input)
+prompt = st.chat_input("Ask a question…")
+if prompt:
+    # store user msg
+    svc.table("messages").insert({"conversation_id": cid, "role": "user", "content": prompt}).execute()
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(prompt)
 
-    # Load structured index (cached)
-    docs = db.list_documents(active_only=True)
-    if not docs:
-        st.error("No documents uploaded yet. Ask an admin to upload content in Admin → Data.")
-        st.stop()
+    # retrieve context
+    q_emb = embed_query(prompt)
+    hits = rpc_match_sections(q_emb, k=top_k, filter_document_ids=filter_doc_ids)
 
-    with st.spinner("Searching the knowledge base…"):
-        sections, embeddings = load_structured_index(cfg["embedding_model"])
-        retrieved = retrieve_sections(sections, embeddings, user_input, cfg["embedding_model"], int(cfg["top_k"]))
+    context_blocks = []
+    for i, h in enumerate(hits, start=1):
+        context_blocks.append(
+            f"[{i}] {h.get('path','')}\nPages {h.get('page_start')}–{h.get('page_end')}\n{h.get('content','')}"
+        )
 
-    # Build Claude messages from last N turns
-    hist = db.get_messages(conversation_id)
-    max_hist = int(cfg.get("max_history_messages", 10))
-    hist_trim = hist[-max_hist:] if max_hist > 0 else []
+    system = (
+        "You are Democracia+’s assistant. Answer using ONLY the provided sources when possible. "
+        "If the sources don’t contain the answer, say what’s missing and suggest what document would help."
+    )
 
-    # Replace last user msg with context-augmented user msg
-    claude_messages = [{"role": r["role"], "content": r["content"]} for r in hist_trim[:-1]]
-    claude_messages.append({"role": "user", "content": build_user_turn(user_input, retrieved, persona_hint)})
+    user_message = (
+        f"QUESTION:\n{prompt}\n\nSOURCES:\n" + ("\n\n".join(context_blocks) if context_blocks else "(none)")
+    )
 
-    system_prompt = build_system_prompt(cfg.get("default_answer_lang", "auto"))
+    # Claude answer
+    resp = claude.messages.create(
+        model=CLAUDE_MODEL,
+        max_tokens=900,
+        temperature=0.2,
+        system=system,
+        messages=[{"role": "user", "content": user_message}],
+    )
+    answer = resp.content[0].text if resp.content else ""
+
+    # store assistant msg
+    svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
 
     with st.chat_message("assistant"):
-        try:
-            ans = call_claude(
-                api_key=os.environ.get("ANTHROPIC_API_KEY", ""),
-                model=cfg["chat_model"],
-                temperature=float(cfg["temperature"]),
-                max_tokens=int(cfg["max_tokens"]),
-                system_prompt=system_prompt,
-                messages=claude_messages,
-            )
-        except Exception as e:
-            st.error(f"Claude API error: {e}")
-            st.stop()
-        st.markdown(ans)
-        db.add_message(conversation_id, "assistant", ans)
+        st.markdown(answer)
 
-        with st.expander("Sources"):
-            if not retrieved:
-                st.write("No excerpts retrieved")
-            else:
-                for i, (sec, score) in enumerate(retrieved, start=1):
-                    st.markdown(f"**[{i}]** {sec.get('path','')}")
-                    st.caption(f"Pages {sec.get('page_start')}–{sec.get('page_end')} • similarity {score:.3f}")
-                    st.text((sec.get('text','')[:700] + ("…" if len(sec.get('text',''))>700 else "")))
+        if hits:
+            with st.expander("Sources used"):
+                for i, h in enumerate(hits, start=1):
+                    st.markdown(f"**[{i}]** {h.get('path','')}")
+                    st.caption(f"Pages {h.get('page_start')}–{h.get('page_end')} • similarity {h.get('similarity'):.3f}")
+                    snippet = (h.get("content", "")[:700] + ("…" if len(h.get("content", "")) > 700 else ""))
+                    st.text(snippet)
