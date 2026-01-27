@@ -16,21 +16,19 @@ anon: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 
 def storage_upload(bucket: str, path: str, content: bytes, content_type: str = "application/pdf") -> None:
-    # Use service role so private buckets work reliably from backend services.
-    # IMPORTANT: storage3 expects upsert as header 'x-upsert' with string value.
+    # Supabase Python API uses .storage.from_(bucket).upload(...)
+    # upsert=True to avoid collisions on retries (we use sha-based filenames)
     svc.storage.from_(bucket).upload(
         path=path,
         file=content,
-        file_options={
-            "content-type": content_type,
-            "x-upsert": "true",
-        },
+        file_options={"content-type": content_type, "x-upsert": "true"},
     )
 
 
 def storage_download(bucket: str, path: str) -> bytes:
     # Use service role to download private objects reliably
     return svc.storage.from_(bucket).download(path)
+
 
 def storage_remove(bucket: str, paths: List[str]) -> None:
     if not paths:

@@ -2,7 +2,6 @@ import os
 import uuid
 import pandas as pd
 import streamlit as st
-from supabase_auth.errors import AuthApiError
 
 from core.pdf_extract import build_sections_from_pdf  # optional: you can process sync for tiny files
 from core.utils import safe_filename, sha256_bytes
@@ -25,12 +24,6 @@ from core.supabase_client import (
 
 BUCKET = "documents"
 
-def _user_email(u):
-    if isinstance(u, dict):
-        return u.get("email") or (u.get("user_metadata") or {}).get("email") or u.get("id")
-    return getattr(u, "email", None) or getattr(u, "id", None)
-
-
 st.set_page_config(page_title="Admin — Data", page_icon="📄", layout="wide")
 
 
@@ -38,25 +31,20 @@ def sidebar_auth():
     st.sidebar.header("Login")
     if st.session_state.get("user"):
         u = st.session_state["user"]
-        st.sidebar.success(f"Logged in: {(u.get('email') or _user_email(u))}")
+        st.sidebar.success(f"Logged in: {u['email']}")
         if st.sidebar.button("Logout"):
             auth_sign_out()
             st.session_state.clear()
             st.rerun()
         return
 
-    email = st.sidebar.text_input("Email")
-    password = st.sidebar.text_input("Password", type="password")
+    email = st.sidebar.text_input("Email", key="admin_login_email")
+    password = st.sidebar.text_input("Password", type="password", key="admin_login_password")
     if st.sidebar.button("Login"):
-        try:
-            res = auth_sign_in(email, password)
-        except AuthApiError:
-            st.sidebar.error("Invalid email or password.")
-            return
-        u = res["user"]
-        user = {"id": getattr(u, "id", None), "email": getattr(u, "email", None) or (getattr(u, "user_metadata", None) or {}).get("email") or email}
+        res = auth_sign_in(email, password)
+        user = {"id": res["user"].id, "email": res["user"].email}
         st.session_state["user"] = user
-        profile = ensure_profile(user["id"], user.get("email") or email)
+        profile = ensure_profile(user["id"], user["email"])
         st.session_state["role"] = profile.get("role", "user")
         st.rerun()
 

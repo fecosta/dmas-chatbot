@@ -1,6 +1,5 @@
 import os
 import streamlit as st
-from supabase_auth.errors import AuthApiError
 from anthropic import Anthropic
 from openai import OpenAI
 
@@ -17,15 +16,12 @@ from core.supabase_client import (
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-3-5-sonnet-20240620")  # change if you prefer
-
 CLAUDE_MODELS = [
     os.environ.get("CLAUDE_MODEL", "").strip(),
     "claude-3-5-sonnet-latest",
     "claude-3-5-haiku-latest",
 ]
 CLAUDE_MODELS = [m for m in CLAUDE_MODELS if m]
-
 
 oai = OpenAI(api_key=OPENAI_API_KEY)
 claude = Anthropic(api_key=ANTHROPIC_API_KEY)
@@ -56,14 +52,10 @@ def sidebar_auth():
             st.rerun()
         return
 
-    email = st.sidebar.text_input("Email")
-    password = st.sidebar.text_input("Password", type="password")
+    email = st.sidebar.text_input("Email", key="chat_login_email")
+    password = st.sidebar.text_input("Password", type="password", key="chat_login_password")
     if st.sidebar.button("Login"):
-        try:
-            res = auth_sign_in(email, password)
-        except AuthApiError:
-            st.sidebar.error("Invalid email or password.")
-            return
+        res = auth_sign_in(email, password)
         u = res["user"]
         user = {
             "id": getattr(u, "id", None),
@@ -167,23 +159,23 @@ if prompt:
 
     # Claude answer
     answer = ""
-    last_err = None
-    for model in CLAUDE_MODELS:
-        try:
-            resp = claude.messages.create(
-                model=model,
-                max_tokens=900,
-                temperature=0.2,
-                system=system,
-                messages=[{"role": "user", "content": user_message}],
-            )
-            answer = resp.content[0].text if resp.content else ""
-            break
-        except Exception as e:
-            last_err = e
-    
-    if not answer:
-        raise RuntimeError(f"Claude call failed for models={CLAUDE_MODELS}. Last error: {last_err}")
+last_err = None
+for model in CLAUDE_MODELS:
+    try:
+        resp = claude.messages.create(
+            model=model,
+            max_tokens=900,
+            temperature=0.2,
+            system=system,
+            messages=[{"role": "user", "content": user_message}],
+        )
+        answer = resp.content[0].text if resp.content else ""
+        break
+    except Exception as e:
+        last_err = e
+
+if not answer:
+    raise RuntimeError(f"Claude call failed for models={CLAUDE_MODELS}. Last error: {last_err}")
 
     # store assistant msg
     svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
