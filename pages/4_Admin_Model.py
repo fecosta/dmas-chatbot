@@ -1,42 +1,63 @@
 import streamlit as st
+from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, svc
 
-from core import db
-from core.auth import render_sidebar_auth, require_admin
-from core.config import load_config, save_config, SUPPORTED_CLAUDE_MODELS, ANSWER_LANG_OPTIONS
+st.set_page_config(page_title="Admin — Model", page_icon="🧠", layout="wide")
 
-st.set_page_config(page_title="Admin — Model", page_icon="⚙️", layout="wide")
+def sidebar_auth():
+    st.sidebar.header("Login")
+    if st.session_state.get("user"):
+        u = st.session_state["user"]
+        email = u.get("email") or u.get("id", "unknown")
+        st.sidebar.success(f"Logged in: {email}")
+        if st.sidebar.button("Logout", key="model_logout"):
+            auth_sign_out()
+            st.session_state.clear()
+            st.rerun()
+        return
 
-db.init_db()
-from core.auth import bootstrap_admin_if_needed
-bootstrap_admin_if_needed()
+    email = st.sidebar.text_input("Email", key="model_login_email")
+    password = st.sidebar.text_input("Password", type="password", key="model_login_password")
+    if st.sidebar.button("Login", key="model_login_btn"):
+        res = auth_sign_in(email, password)
+        u = res["user"]
+        user = {"id": u.id, "email": getattr(u, "email", None) or email}
+        st.session_state["user"] = user
+        profile = ensure_profile(user["id"], user["email"] or "")
+        st.session_state["role"] = profile.get("role", "user")
+        st.rerun()
 
-with st.sidebar:
-    st.markdown("## D+ Chatbot")
-    render_sidebar_auth()
+sidebar_auth()
+user = st.session_state.get("user")
+if not user:
+    st.title("🧠 Admin — Model setup")
+    st.info("Please log in.")
+    st.stop()
 
-admin = require_admin()
+if st.session_state.get("role") != "admin":
+    st.title("🧠 Admin — Model setup")
+    st.error("Admin access required.")
+    st.stop()
 
-cfg = load_config()
+st.title("🧠 Admin — Model setup")
 
-st.title("Admin — Model setup")
+# Load settings row
+rows = svc.table("model_settings").select("*").eq("scope", "global").limit(1).execute().data or []
+if not rows:
+    svc.table("model_settings").insert({"scope": "global"}).execute()
+    rows = svc.table("model_settings").select("*").eq("scope", "global").limit(1).execute().data or []
 
-col1, col2 = st.columns(2)
-with col1:
-    cfg["chat_model"] = st.selectbox("Claude model", SUPPORTED_CLAUDE_MODELS, index=SUPPORTED_CLAUDE_MODELS.index(cfg.get("chat_model", SUPPORTED_CLAUDE_MODELS[0])))
-    cfg["temperature"] = float(st.slider("Temperature", 0.0, 1.0, float(cfg.get("temperature", 0.25)), 0.05))
-    cfg["max_tokens"] = int(st.slider("Max output tokens", 200, 3000, int(cfg.get("max_tokens", 1200)), 50))
-with col2:
-    cfg["embedding_model"] = st.text_input("OpenAI embedding model", value=str(cfg.get("embedding_model", "text-embedding-3-large")))
-    cfg["top_k"] = int(st.slider("Top K excerpts", 1, 12, int(cfg.get("top_k", 6))))
-    cfg["max_history_messages"] = int(st.slider("History turns kept", 0, 20, int(cfg.get("max_history_messages", 10))))
+settings = rows[0]
 
-# Language option
-code_to_label = {v: k for k, v in ANSWER_LANG_OPTIONS.items()}
-current_label = code_to_label.get(cfg.get("default_answer_lang", "auto"), "Auto")
-selected_label = st.radio("Default answer language", list(ANSWER_LANG_OPTIONS.keys()), index=list(ANSWER_LANG_OPTIONS.keys()).index(current_label))
-cfg["default_answer_lang"] = ANSWER_LANG_OPTIONS[selected_label]
+claude_model = st.text_input("Claude model", value=settings["claude_model"])
+embedding_model = st.text_input("Embedding model", value=settings["embedding_model"])
+top_k = st.slider("Top K (retrieved chunks)", 3, 20, int(settings["top_k"]))
 
-st.markdown("---")
-if st.button("Save settings"):
-    save_config(cfg)
-    st.success("Saved.")
+if st.button("Save", type="primary"):
+    svc.table("model_settings").update({
+        "claude_model": claude_model.strip(),
+        "embedding_model": embedding_model.strip(),
+        "top_k": int(top_k),
+        "updated_at": "now()",
+    }).eq("id", settings["id"]).execute()
+    st.success("Saved model settings.")
+    st.rerun()

@@ -1,69 +1,66 @@
 import streamlit as st
-
-from core import db
-from core.auth import render_sidebar_auth, require_admin, hash_password
+import pandas as pd
+from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, svc
 
 st.set_page_config(page_title="Admin — Users", page_icon="👥", layout="wide")
 
-db.init_db()
-from core.auth import bootstrap_admin_if_needed
-bootstrap_admin_if_needed()
+def sidebar_auth():
+    st.sidebar.header("Login")
+    if st.session_state.get("user"):
+        u = st.session_state["user"]
+        email = u.get("email") or u.get("id", "unknown")
+        st.sidebar.success(f"Logged in: {email}")
+        if st.sidebar.button("Logout", key="users_logout"):
+            auth_sign_out()
+            st.session_state.clear()
+            st.rerun()
+        return
 
-with st.sidebar:
-    st.markdown("## D+ Chatbot")
-    render_sidebar_auth()
+    email = st.sidebar.text_input("Email", key="users_login_email")
+    password = st.sidebar.text_input("Password", type="password", key="users_login_password")
+    if st.sidebar.button("Login", key="users_login_btn"):
+        res = auth_sign_in(email, password)
+        u = res["user"]
+        user = {"id": u.id, "email": getattr(u, "email", None) or email}
+        st.session_state["user"] = user
+        profile = ensure_profile(user["id"], user["email"] or "")
+        st.session_state["role"] = profile.get("role", "user")
+        st.rerun()
 
-admin = require_admin()
+sidebar_auth()
+user = st.session_state.get("user")
+if not user:
+    st.title("👥 Admin — Users")
+    st.info("Please log in.")
+    st.stop()
 
-st.title("Admin → Users")
+if st.session_state.get("role") != "admin":
+    st.title("👥 Admin — Users")
+    st.error("Admin access required.")
+    st.stop()
 
-with st.expander("Create user", expanded=False):
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    role = st.selectbox("Role", ["user", "admin"], index=0)
-    if st.button("Create"):
-        if not username or not password:
-            st.error("Username and password required")
-        else:
-            try:
-                db.insert_user(username=username.strip(), password_hash=hash_password(password), role=role)
-                st.success("User created")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Could not create user: {e}")
+st.title("👥 Admin — Users")
+
+profiles = svc.table("profiles").select("id,email,role,created_at").order("created_at", desc=True).execute().data or []
+if not profiles:
+    st.info("No users found.")
+    st.stop()
+
+df = pd.DataFrame(profiles)
+st.dataframe(df, use_container_width=True, hide_index=True)
 
 st.markdown("---")
+st.subheader("Change role")
 
-users = db.list_users()
-for u in users:
-    cols = st.columns([3, 1, 1, 2])
-    with cols[0]:
-        st.write(f"**{u['username']}**")
-        st.caption(f"id: {u['id']} • created: {u['created_at']}")
-    with cols[1]:
-        st.write(u['role'])
-    with cols[2]:
-        st.write("✅" if bool(u['is_active']) else "⛔")
-    with cols[3]:
-        with st.popover("Manage", use_container_width=True):
-            new_role = st.selectbox("Role", ["user", "admin"], index=0 if u['role']=="user" else 1, key=f"role_{u['id']}")
-            if st.button("Save role", key=f"save_role_{u['id']}"):
-                db.set_user_role(u['id'], new_role)
-                st.success("Role updated")
-                st.rerun()
+emails = [p["email"] for p in profiles if p.get("email")]
+selected_email = st.selectbox("User", options=emails, key="users_pick_email")
+new_role = st.selectbox("Role", options=["user", "admin"], key="users_pick_role")
 
-            active = st.checkbox("Active", value=bool(u['is_active']), key=f"active_{u['id']}")
-            if st.button("Save active", key=f"save_active_{u['id']}"):
-                db.set_user_active(u['id'], active)
-                st.success("Updated")
-                st.rerun()
-
-            new_pw = st.text_input("Reset password", type="password", key=f"pw_{u['id']}")
-            if st.button("Set password", key=f"set_pw_{u['id']}"):
-                if not new_pw:
-                    st.error("Password required")
-                else:
-                    db.set_user_password_hash(u['id'], hash_password(new_pw))
-                    st.success("Password updated")
-
-    st.divider()
+if st.button("Update role", type="primary", key="users_update_role"):
+    row = next((p for p in profiles if p.get("email") == selected_email), None)
+    if not row:
+        st.error("User not found.")
+    else:
+        svc.table("profiles").update({"role": new_role}).eq("id", row["id"]).execute()
+        st.success(f"Updated {selected_email} → {new_role}")
+        st.rerun()
