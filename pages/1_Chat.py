@@ -258,10 +258,8 @@ if prompt:
     cap = int(settings["max_context_chars"])
     for i, h in enumerate(hits or [], start=1):
         block = (
-            f"[{i}] {h.get('path','')}
-"
-            f"Pages {h.get('page_start')}–{h.get('page_end')}
-"
+            f"[{i}] {h.get('path','')}"
+            f"Pages {h.get('page_start')}–{h.get('page_end')}"
             f"{h.get('content','')}"
         )
         if used + len(block) > cap:
