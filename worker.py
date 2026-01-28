@@ -18,7 +18,6 @@ EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")  # 153
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-
 def embed_texts(texts: List[str]) -> List[List[float]]:
     resp = client.embeddings.create(model=EMBED_MODEL, input=texts)
     return [d.embedding for d in resp.data]
