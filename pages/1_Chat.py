@@ -18,6 +18,8 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
 
+DEFAULT_TOP_K = 8
+
 # Prefer env var, but fall back to commonly available "latest" aliases.
 _CLAUDE_ENV = os.environ.get("CLAUDE_MODEL", "").strip()
 CLAUDE_MODELS = [m for m in [_CLAUDE_ENV, "claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"] if m]
@@ -111,19 +113,6 @@ st.title("💬 D+ Chatbot")
 docs = list_documents(admin=is_admin, user_id=user_id)
 ready_docs = [d for d in docs if d.get("status") == "ready"]
 
-doc_options = {f"{d.get('filename','')} — {str(d.get('id'))[:8]}": d["id"] for d in ready_docs if d.get("id")}
-
-with st.sidebar:
-    st.subheader("Sources")
-    selected_labels = st.multiselect(
-        "Limit retrieval to selected documents",
-        options=list(doc_options.keys()),
-        default=[],
-        key="chat_doc_filter",
-    )
-    filter_doc_ids = [doc_options[x] for x in selected_labels] if selected_labels else None
-    top_k = st.slider("Retrieved chunks", 3, 15, 8, key="chat_topk")
-
 cid = get_or_create_conversation(user_id)
 
 # Load messages from DB
@@ -150,7 +139,7 @@ if prompt:
 
     # retrieve context
     q_emb = embed_query(prompt)
-    hits = rpc_match_sections(q_emb, k=top_k, filter_document_ids=filter_doc_ids)
+    hits = rpc_match_sections(q_emb, k=DEFAULT_TOP_K, filter_document_ids=None,)
 
     context_blocks = []
     for i, h in enumerate(hits or [], start=1):
