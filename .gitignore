@@ -1,5 +1,7 @@
 .DS_Store
 .devcontainer/
 .venvq/
-/pdf
 _temp/
+pdf/
+pdf-cleaner/
+*.pdf
