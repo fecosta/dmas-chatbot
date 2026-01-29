@@ -231,6 +231,49 @@ is_admin = role == "admin"
 
 settings = _load_model_settings()
 
+def _truncate_title(s: str, max_len: int = 50) -> str:
+    s = " ".join((s or "").strip().split())
+    if not s:
+        return "Chat"
+    if len(s) <= max_len:
+        return s
+    return s[: max_len - 1].rstrip() + "…"
+
+
+def maybe_autotitle_conversation(conversation_id: str, prompt: str) -> None:
+    """
+    If the conversation title is still the default ('Chat'),
+    update it using the first user prompt.
+    """
+    try:
+        row = (
+            svc.table("conversations")
+            .select("title")
+            .eq("id", conversation_id)
+            .limit(1)
+            .execute()
+            .data
+        )
+        if not row:
+            return
+
+        current_title = (row[0].get("title") or "").strip()
+        if current_title.lower() != "chat":
+            return  # already titled
+
+        new_title = _truncate_title(prompt, 50)
+        if new_title.lower() == "chat":
+            return
+
+        svc.table("conversations").update(
+            {"title": new_title}
+        ).eq("id", conversation_id).execute()
+
+    except Exception:
+        # Never block chat if titling fails
+        return
+    
+
 if is_admin and settings["embedding_model"] != ENV_EMBED_MODEL:
     st.warning(
         "Admin note: Embedding model differs from the environment default. "
@@ -305,9 +348,16 @@ for m in msgs:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-prompt = st.chat_input("Ask a question…")
+prompt = st.chat_input("Ask a question…") 
+
 if prompt:
-    svc.table("messages").insert({"conversation_id": cid, "role": "user", "content": prompt}).execute()
+    # Auto-title conversation if still default
+    maybe_autotitle_conversation(cid, prompt)
+
+    svc.table("messages").insert(
+        {"conversation_id": cid, "role": "user", "content": prompt}
+    ).execute()
+
     with st.chat_message("user"):
         st.markdown(prompt)
 
