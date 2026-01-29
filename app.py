@@ -1,4 +1,8 @@
 import os
+# Load .env locally (Render already injects env vars, so this is safe)
+if os.path.exists(".env"):
+    from dotenv import load_dotenv
+    load_dotenv()
 import streamlit as st
 
 st.set_page_config(page_title="D+ Chatbot", page_icon="🗳️", layout="wide")
