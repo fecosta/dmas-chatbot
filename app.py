@@ -7,6 +7,14 @@ import streamlit as st
 
 st.set_page_config(page_title="D+ Chatbot", page_icon="🗳️", layout="wide")
 
+st.markdown(
+    """
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    """,
+    unsafe_allow_html=True,
+)
+
 st.title("D+ Chatbot — Democracia+")
 
 st.markdown(

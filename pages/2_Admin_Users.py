@@ -4,12 +4,21 @@ from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, sv
 
 st.set_page_config(page_title="Admin — Users", page_icon="👥", layout="wide")
 
+# Bootstrap Icons (visual-only)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+def bi(name: str, size: str = "1em") -> str:
+    return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
+
 def sidebar_auth():
-    st.sidebar.header("Login")
+    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
     if st.session_state.get("user"):
         u = st.session_state["user"]
         email = u.get("email") or u.get("id", "unknown")
-        st.sidebar.success(f"Logged in: {email}")
+        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{email}**", unsafe_allow_html=True)
         if st.sidebar.button("Logout", key="users_logout"):
             auth_sign_out()
             st.session_state.clear()
@@ -30,16 +39,17 @@ def sidebar_auth():
 sidebar_auth()
 user = st.session_state.get("user")
 if not user:
-    st.title("👥 Admin — Users")
+    st.markdown(f"# {bi('people')} Admin — Users", unsafe_allow_html=True)
     st.info("Please log in.")
     st.stop()
 
 if st.session_state.get("role") != "admin":
-    st.title("👥 Admin — Users")
+    st.markdown(f"# {bi('people')} Admin — Users", unsafe_allow_html=True)
     st.error("Admin access required.")
     st.stop()
 
-st.title("👥 Admin — Users")
+st.markdown(f"# {bi('people')} Admin — Users", unsafe_allow_html=True)
+st.caption("Manage user accounts and roles.")
 
 profiles = svc.table("profiles").select("id,email,role,created_at").order("created_at", desc=True).execute().data or []
 if not profiles:
@@ -50,7 +60,7 @@ df = pd.DataFrame(profiles)
 st.dataframe(df, use_container_width=True, hide_index=True)
 
 st.markdown("---")
-st.subheader("Change role")
+st.markdown(f"### {bi('shield-lock')} Change role", unsafe_allow_html=True)
 
 emails = [p["email"] for p in profiles if p.get("email")]
 selected_email = st.selectbox("User", options=emails, key="users_pick_email")

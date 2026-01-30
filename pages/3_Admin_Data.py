@@ -26,12 +26,21 @@ BUCKET = "documents"
 
 st.set_page_config(page_title="Admin — Data", page_icon="📄", layout="wide")
 
+# Bootstrap Icons (visual-only)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+def bi(name: str, size: str = "1em") -> str:
+    return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
+
 
 def sidebar_auth():
-    st.sidebar.header("Login")
+    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
     if st.session_state.get("user"):
         u = st.session_state["user"]
-        st.sidebar.success(f"Logged in: {u['email']}")
+        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{u['email']}**", unsafe_allow_html=True)
         if st.sidebar.button("Logout"):
             auth_sign_out()
             st.session_state.clear()
@@ -52,21 +61,23 @@ def sidebar_auth():
 sidebar_auth()
 user = st.session_state.get("user")
 if not user:
-    st.title("📄 Admin — Data")
+    st.markdown(f"# {bi('folder2-open')} Admin — Data", unsafe_allow_html=True)
     st.info("Please log in.")
     st.stop()
 
 user_id = user["id"]
 role = st.session_state.get("role", "user")
 if role != "admin":
-    st.title("📄 Admin — Data")
+    st.markdown(f"# {bi('folder2-open')} Admin — Data", unsafe_allow_html=True)
     st.error("Admin access required.")
     st.stop()
 
-st.title("📄 Admin — Data upload & management")
+st.markdown(f"# {bi('folder2-open')} Admin — Data upload & management", unsafe_allow_html=True)
+st.caption("Upload, process, and manage source documents.")
 
 # -------- Upload --------
-st.subheader("Upload documents (stored in Supabase Storage)")
+st.markdown(f"### {bi('cloud-upload')} Upload documents", unsafe_allow_html=True)
+st.caption("Files are stored in Supabase Storage and processed asynchronously.")
 
 with st.form("upload_form", clear_on_submit=True):
     files = st.file_uploader(
@@ -123,7 +134,7 @@ if submitted and files:
 
 # -------- Documents list (Option B table view) --------
 st.markdown("---")
-st.subheader("Documents")
+st.markdown(f"### {bi('files')} Documents", unsafe_allow_html=True)
 
 docs = list_documents(admin=True, user_id=user_id)
 
@@ -200,6 +211,14 @@ with c3:
 with c4:
     st.caption(f"Selected: {len(selected_ids)} / {len(edited)}")
 
+st.caption(
+    f"{bi('cloud-upload')} uploaded · "
+    f"{bi('arrow-repeat')} processing · "
+    f"{bi('check-circle-fill')} ready · "
+    f"{bi('exclamation-triangle-fill')} failed",
+    unsafe_allow_html=True,
+)
+
 colA, colB = st.columns([1, 2])
 with colA:
     if st.button("Delete selected", type="primary", disabled=(len(selected_ids) == 0)):
@@ -237,6 +256,7 @@ if st.session_state.get("confirm_delete_all"):
             st.session_state["confirm_delete_all"] = False
 
 with st.expander("Recent events"):
+    st.markdown(f"#### {bi('activity')} Recent events", unsafe_allow_html=True)
     ev = svc.table("events").select("*").order("created_at", desc=True).limit(50).execute().data or []
     for e in ev:
         st.code(f"{e['created_at']} | {e['action']} | doc={e.get('document_id')} | {e.get('details')}")

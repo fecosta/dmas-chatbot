@@ -47,6 +47,14 @@ oai = OpenAI(api_key=OPENAI_API_KEY)
 claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
+# Bootstrap Icons (visual only; safe)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+def bi(name: str, size: str = "1em") -> str:
+    return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
 
 
 def _user_email(u) -> str:
@@ -137,7 +145,7 @@ def _load_model_settings() -> dict:
 
 
 def sidebar_auth() -> None:
-    st.sidebar.header("Login")
+    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
 
     # Normalize any older session shapes
     if st.session_state.get("user") is not None and not isinstance(st.session_state["user"], dict):
@@ -146,7 +154,7 @@ def sidebar_auth() -> None:
 
     if st.session_state.get("user"):
         u = st.session_state["user"]
-        st.sidebar.success(f"Logged in: {_user_email(u)}")
+        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{_user_email(u)}**", unsafe_allow_html=True)
         if st.sidebar.button("Logout", key="chat_logout"):
             try:
                 auth_sign_out()
@@ -219,7 +227,7 @@ def embed_query(q: str, embed_model: str):
 sidebar_auth()
 user = st.session_state.get("user")
 if not user:
-    st.title("💬 D+ Chatbot")
+    st.markdown(f"# {bi('chat-square-text')} D+ Chatbot", unsafe_allow_html=True)
     st.info("Please log in to continue.")
     st.stop()
 
@@ -283,50 +291,46 @@ if is_admin and settings["embedding_model"] != ENV_EMBED_MODEL:
 # Sidebar: conversation list + new chat
 with st.sidebar:
     st.markdown("---")
-    st.subheader("Conversations")
+    st.sidebar.markdown(f"### {bi('clock-history')} Conversations", unsafe_allow_html=True)
 
-    convs = list_conversations_for_user(user_id)
-    labels: list[str] = []
-    id_by_label: dict[str, str] = {}
-
-    for c in convs:
-        title = (c.get("title") or "Chat").strip()
-        when = _safe_dt_label(c.get("created_at"))
-        label = f"{title} · {when}" if when else title
-        if label in id_by_label:
-            label = f"{label} · {str(c.get('id',''))[:6]}"
-        labels.append(label)
-        if c.get("id"):
-            id_by_label[label] = c["id"]
-
+    convs = list_conversations_for_user(user_id)  # already sorted desc in your helper
     current_id = st.session_state.get("conversation_id")
-    current_label = None
-    if current_id:
-        for lbl, cid in id_by_label.items():
-            if cid == current_id:
-                current_label = lbl
-                break
 
-    if st.button("+ New chat", key="chat_new_chat"):
-        create_conversation(user_id, title="Chat")
-        st.rerun()
-
-    if labels:
-        picked = st.selectbox(
-            "Select a conversation",
-            options=labels,
-            index=labels.index(current_label) if current_label in labels else 0,
-            key="chat_conv_pick",
-            label_visibility="collapsed",
-        )
-        picked_id = id_by_label.get(picked)
-        if picked_id and picked_id != st.session_state.get("conversation_id"):
-            st.session_state["conversation_id"] = picked_id
+    colA, colB = st.columns([1, 1])
+    with colA:
+        if st.button("+ New chat", key="chat_new_chat", use_container_width=True):
+            create_conversation(user_id, title="Chat")
             st.rerun()
-    else:
-        st.caption("No conversations yet. Click “New chat”.")
 
-st.title("💬 D+ Chatbot")
+    with colB:
+        # Goes to a dedicated full history page (we'll create it below)
+        if st.button("View all", key="chat_view_all_history", use_container_width=True):
+            st.switch_page("pages/2_History.py")
+
+    st.caption("Recent (last 4)")
+    recent = convs[:4]
+
+    if not recent:
+        st.caption("No conversations yet.")
+    else:
+        for c in recent:
+            cid = c.get("id")
+            title = (c.get("title") or "Chat").strip()
+            when = _safe_dt_label(c.get("created_at"))
+            label = f"{title}"
+            if when:
+                label += f" · {when}"
+
+            # Use a small list-style nav: buttons
+            is_active = (cid == current_id)
+            btn_label = ("● " if is_active else "· ") + label
+
+            if st.button(btn_label, key=f"chat_conv_{cid}", use_container_width=True):
+                if cid and cid != current_id:
+                    st.session_state["conversation_id"] = cid
+                    st.rerun()
+
+st.markdown(f"# {bi('chat-square-text')} D+ Chatbot", unsafe_allow_html=True)
 
 # (No UI filters here; we keep docs available for future admin-only tooling)
 docs = list_documents(admin=is_admin, user_id=user_id)
@@ -449,6 +453,7 @@ if prompt:
             svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
 
             if settings.get("include_citations", True):
-                with st.expander("Sources used", expanded=False):
+                with st.expander("Sources used"):
+                    st.markdown(f"#### {bi('book')} Sources", unsafe_allow_html=True)
                     for s in sources:
                         st.markdown(s)

@@ -6,15 +6,24 @@ from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, sv
 
 st.set_page_config(page_title="Admin — Model", page_icon="🧠", layout="wide")
 
+# Bootstrap Icons (visual-only)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+def bi(name: str, size: str = "1em") -> str:
+    return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
+
 
 # ------------------------- Auth -------------------------
 
 def sidebar_auth():
-    st.sidebar.header("Login")
+    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
     if st.session_state.get("user"):
         u = st.session_state["user"]
         email = (u.get("email") if isinstance(u, dict) else None) or (u.get("id") if isinstance(u, dict) else None) or "unknown"
-        st.sidebar.success(f"Logged in: {email}")
+        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{email}**", unsafe_allow_html=True)
         if st.sidebar.button("Logout", key="model_logout"):
             auth_sign_out()
             st.session_state.clear()
@@ -41,19 +50,19 @@ def sidebar_auth():
 sidebar_auth()
 user = st.session_state.get("user")
 if not user:
-    st.title("🧠 Admin — Model setup")
+    st.markdown(f"# {bi('cpu')} Admin — Model setup", unsafe_allow_html=True)
     st.info("Please log in.")
     st.stop()
 
 if st.session_state.get("role") != "admin":
-    st.title("🧠 Admin — Model setup")
+    st.markdown(f"# {bi('cpu')} Admin — Model setup", unsafe_allow_html=True)
     st.error("Admin access required.")
     st.stop()
 
 
 # ------------------------- Load/Create settings row -------------------------
 
-st.title("🧠 Admin — Model setup")
+st.markdown(f"# {bi('cpu')} Admin — Model setup", unsafe_allow_html=True)
 st.caption("These are global settings applied to the Chat experience.")
 
 rows = svc.table("model_settings").select("*").eq("scope", "global").limit(1).execute().data or []
@@ -72,10 +81,11 @@ def get(key: str, default):
 # ------------------------- UI -------------------------
 
 tabs = st.tabs(["Claude", "Retrieval", "Prompt & UX", "Advanced"])
+st.caption("Tune global model + retrieval behavior. Visual labels use Bootstrap icons; features are unchanged.")
 
 # ---- Claude ----
 with tabs[0]:
-    st.subheader("Claude configuration")
+    st.markdown(f"### {bi('chat-text')} Claude configuration", unsafe_allow_html=True)
 
     # Backward compat: if only claude_model exists, use it as the primary
     primary_default = settings.get("claude_model_primary") or settings.get("claude_model") or "claude-3-5-sonnet-latest"
@@ -123,7 +133,7 @@ with tabs[0]:
         st.error(f"Invalid JSON: {e}")
 
     st.markdown("---")
-    st.subheader("Embeddings (OpenAI)")
+    st.markdown(f"### {bi('vector-pen')} Embeddings (OpenAI)", unsafe_allow_html=True)
     embedding_model = st.text_input(
         "Embedding model",
         value=str(get("embedding_model", "text-embedding-3-small")).strip(),
@@ -132,7 +142,7 @@ with tabs[0]:
 
 # ---- Retrieval ----
 with tabs[1]:
-    st.subheader("Retrieval behavior (RAG)")
+    st.markdown(f"### {bi('sliders')} Retrieval behavior (RAG)", unsafe_allow_html=True)
     top_k = st.slider("Top K chunks", 3, 30, int(get("top_k", 8)))
     min_score = st.slider(
         "Minimum similarity threshold (0 = off)",
@@ -153,7 +163,7 @@ with tabs[1]:
 
 # ---- Prompt & UX ----
 with tabs[2]:
-    st.subheader("Prompting & UX")
+    st.markdown(f"### {bi('terminal')} Prompting & UX", unsafe_allow_html=True)
     system_prompt = st.text_area(
         "System prompt",
         value=str(get(
@@ -174,7 +184,7 @@ with tabs[2]:
 
 # ---- Advanced ----
 with tabs[3]:
-    st.subheader("Advanced / Debug")
+    st.markdown(f"### {bi('bug')} Advanced / Debug", unsafe_allow_html=True)
     st.caption("This is the raw row from model_settings (read-only).")
     st.json(settings)
 
