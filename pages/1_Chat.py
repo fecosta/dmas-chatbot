@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from datetime import datetime
 
 import streamlit as st
@@ -39,7 +40,7 @@ DEFAULTS = {
         "You are Democracia+’s assistant. Answer using ONLY the provided sources when possible. "
         "If the sources don’t contain the answer, say what’s missing and suggest what document would help."
     ),
-    "answer_style": "concise",  # concise|balanced|detailed
+    "answer_style": "balanced",  # concise|balanced|detailed
     "include_citations": True,
 }
 
@@ -64,12 +65,52 @@ def _user_email(u) -> str:
 
 
 def _style_instruction(style: str) -> str:
+    """Additional runtime style hint layered on top of the admin system prompt.
+
+    IMPORTANT: Default to narrative prose. Use bullets only for a short recap when explicitly requested.
+    """
     style = (style or "").strip().lower()
     if style == "detailed":
-        return "Write a detailed, structured answer with headings and bullet points where helpful."
+        return (
+            "Default to narrative prose with context and reasoning. "
+            "Aim for 4–8 short paragraphs. "
+            "Only use headings/bullets if the user explicitly asks for a checklist/summary."
+        )
     if style == "balanced":
-        return "Write a clear answer with brief structure and 1–2 short bullets if helpful."
-    return "Be concise and direct. Use short paragraphs."
+        return (
+            "Default to narrative prose with context and reasoning. "
+            "Aim for 3–5 short paragraphs. "
+            "Avoid bullet points unless explicitly requested."
+        )
+    return (
+        "Default to narrative prose with context and reasoning. "
+        "Aim for 2–4 short paragraphs. "
+        "Avoid bullet points unless explicitly requested."
+    )
+
+# --- Response mode switching (narrative-first vs structured summary) ---
+_STRUCTURED_TRIGGERS = re.compile(
+    r"\b(checklist|bullet|bullets|framework|tl;dr|tldr|summary|summarize|key points|in points)\b",
+    re.IGNORECASE,
+)
+
+
+def _pick_mode(user_text: str) -> str:
+    return "STRUCTURED_SUMMARY" if _STRUCTURED_TRIGGERS.search(user_text or "") else "NARRATIVE_FIRST"
+
+
+def _mode_hint(user_text: str) -> str:
+    mode = _pick_mode(user_text)
+    if mode == "STRUCTURED_SUMMARY":
+        return (
+            "[MODE: STRUCTURED_SUMMARY]\n"
+            "Use headings and bullet points. Keep it concise and scannable.\n\n"
+        )
+    return (
+        "[MODE: NARRATIVE_FIRST]\n"
+        "Write in connected paragraphs with context and reasoning. "
+        "Avoid bullet points unless explicitly requested.\n\n"
+    )
 
 
 def _safe_dt_label(iso_ts: str | None) -> str:
@@ -330,11 +371,8 @@ with st.sidebar:
                     st.session_state["conversation_id"] = cid
                     st.rerun()
 
-st.markdown(f"# {bi('chat-square-text')} D+ Chatbot", unsafe_allow_html=True)
-
 # (No UI filters here; we keep docs available for future admin-only tooling)
 docs = list_documents(admin=is_admin, user_id=user_id)
-_ = [d for d in docs if d.get("status") == "ready"]
 
 cid = get_or_create_conversation(user_id)
 
@@ -421,7 +459,13 @@ if prompt:
         else:
             sys = settings["system_prompt"].strip() + "\n\n" + _style_instruction(settings.get("answer_style", "concise"))
             ctx = "\n\n".join(sources)
-            user_msg = f"QUESTION:\n{prompt}\n\nSOURCES:\n{ctx}\n\nAnswer using the sources above."
+            user_msg = (
+                _mode_hint(prompt)
+                + f"QUESTION:\n{prompt}\n\n"
+                + "CONTEXT (reference only; do not mirror its formatting):\n"
+                + f"{ctx}\n\n"
+                + "Use the context above as evidence. If it is insufficient, say what is missing."
+            )
 
             models = settings.get("claude_models") or [
                 DEFAULTS["claude_model_primary"],
