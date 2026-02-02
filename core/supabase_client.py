@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from supabase import create_client, Client
@@ -103,13 +104,18 @@ def find_document_by_sha256(sha256: str) -> Optional[Dict[str, Any]]:
 
 def update_document_status(doc_id: str, status: str, error: Optional[str] = None) -> None:
     payload: Dict[str, Any] = {"status": status}
+
+    # PostgREST expects concrete timestamp values; avoid SQL-function strings like "now()".
+    now_iso = datetime.now(timezone.utc).isoformat()
+
     if status == "ready":
-        payload["processed_at"] = "now()"
+        payload["processed_at"] = now_iso
         payload["error"] = None
-    if status == "failed":
+    elif status == "failed":
         payload["error"] = error or "unknown"
-    if status == "deleted":
-        payload["deleted_at"] = "now()"
+    elif status == "deleted":
+        payload["deleted_at"] = now_iso
+
     svc.table("documents").update(payload).eq("id", doc_id).execute()
 
 
