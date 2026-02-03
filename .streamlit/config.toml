@@ -1,6 +1,10 @@
 [server]
 enableStaticServing = true
 
+[client]
+showSidebarNavigation = false
+
+
 [[theme.fontFaces]]
 family = "SpaceGrotesk"
 url = "app/static/SpaceGrotesk-VariableFont_wght.ttf"

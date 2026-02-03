@@ -2,9 +2,13 @@ import json
 import streamlit as st
 from supabase_auth.errors import AuthApiError
 
+from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, svc
+from core.ui import apply_ui
 
-st.set_page_config(page_title="Admin — Model", page_icon="🧠", layout="wide")
+st.set_page_config(page_title="Admin — Model", page_icon="🧠", layout="centered")
+ensure_bootstrap_icons()
+render_sidebar()
 
 # Bootstrap Icons (visual-only)
 st.markdown(
@@ -12,53 +16,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+apply_ui()
+
 def bi(name: str, size: str = "1em") -> str:
     return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
 
 
 # ------------------------- Auth -------------------------
-
-def sidebar_auth():
-    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
-    if st.session_state.get("user"):
-        u = st.session_state["user"]
-        email = (u.get("email") if isinstance(u, dict) else None) or (u.get("id") if isinstance(u, dict) else None) or "unknown"
-        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{email}**", unsafe_allow_html=True)
-        if st.sidebar.button("Logout", key="model_logout"):
-            auth_sign_out()
-            st.session_state.clear()
-            st.rerun()
-        return
-
-    email = st.sidebar.text_input("Email", key="model_login_email")
-    password = st.sidebar.text_input("Password", type="password", key="model_login_password")
-    if st.sidebar.button("Login", key="model_login_btn"):
-        try:
-            res = auth_sign_in(email, password)
-        except AuthApiError:
-            st.sidebar.error("Invalid email or password.")
-            st.stop()
-
-        u = res["user"]
-        user = {"id": u.id, "email": getattr(u, "email", None) or email}
-        st.session_state["user"] = user
-        profile = ensure_profile(user["id"], user["email"] or "")
-        st.session_state["role"] = profile.get("role", "user")
-        st.rerun()
-
-
-sidebar_auth()
 user = st.session_state.get("user")
 if not user:
-    st.markdown(f"# {bi('cpu')} Admin — Model setup", unsafe_allow_html=True)
     st.info("Please log in.")
-    st.stop()
+    st.switch_page("pages/0_Login.py")
 
 if st.session_state.get("role") != "admin":
-    st.markdown(f"# {bi('cpu')} Admin — Model setup", unsafe_allow_html=True)
     st.error("Admin access required.")
     st.stop()
-
 
 # ------------------------- Load/Create settings row -------------------------
 

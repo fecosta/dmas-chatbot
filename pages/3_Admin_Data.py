@@ -4,6 +4,8 @@ import pandas as pd
 import streamlit as st
 
 from core.pdf_extract import build_sections_from_pdf  # optional: you can process sync for tiny files
+from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
+from core.ui import apply_ui
 from core.utils import safe_filename, sha256_bytes
 
 from core.supabase_client import (
@@ -24,7 +26,9 @@ from core.supabase_client import (
 
 BUCKET = "documents"
 
-st.set_page_config(page_title="Admin — Data", page_icon="📄", layout="wide")
+st.set_page_config(page_title="Admin — Data", page_icon="📄", layout="centered")
+ensure_bootstrap_icons()
+render_sidebar()
 
 # Bootstrap Icons (visual-only)
 st.markdown(
@@ -32,38 +36,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+apply_ui()
+
+
 def bi(name: str, size: str = "1em") -> str:
     return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
 
-
-def sidebar_auth():
-    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
-    if st.session_state.get("user"):
-        u = st.session_state["user"]
-        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{u['email']}**", unsafe_allow_html=True)
-        if st.sidebar.button("Logout"):
-            auth_sign_out()
-            st.session_state.clear()
-            st.rerun()
-        return
-
-    email = st.sidebar.text_input("Email", key="admin_login_email")
-    password = st.sidebar.text_input("Password", type="password", key="admin_login_password")
-    if st.sidebar.button("Login"):
-        res = auth_sign_in(email, password)
-        user = {"id": res["user"].id, "email": res["user"].email}
-        st.session_state["user"] = user
-        profile = ensure_profile(user["id"], user["email"])
-        st.session_state["role"] = profile.get("role", "user")
-        st.rerun()
-
-
-sidebar_auth()
+# ------------------------- Auth -------------------------
 user = st.session_state.get("user")
 if not user:
-    st.markdown(f"# {bi('folder2-open')} Admin — Data", unsafe_allow_html=True)
     st.info("Please log in.")
-    st.stop()
+    st.switch_page("pages/0_Login.py")
+    
+    if st.session_state.get("role") != "admin":
+        st.error("Admin access required.")
+        st.stop()
 
 user_id = user["id"]
 role = st.session_state.get("role", "user")

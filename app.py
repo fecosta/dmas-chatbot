@@ -1,4 +1,6 @@
 import os
+
+from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 # Load .env locally (Render already injects env vars, so this is safe)
 if os.path.exists(".env"):
     from dotenv import load_dotenv
@@ -6,6 +8,8 @@ if os.path.exists(".env"):
 import streamlit as st
 
 st.set_page_config(page_title="D+ Chatbot", page_icon="🗳️", layout="wide")
+ensure_bootstrap_icons()
+render_sidebar()
 
 st.markdown(
     """

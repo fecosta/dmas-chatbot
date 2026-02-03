@@ -8,6 +8,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 from supabase_auth.errors import AuthApiError
 
+from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import (
     auth_sign_in,
     auth_sign_out,
@@ -48,6 +49,8 @@ oai = OpenAI(api_key=OPENAI_API_KEY)
 claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 
 st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
+ensure_bootstrap_icons()
+render_sidebar()
 # Bootstrap Icons (visual only; safe)
 st.markdown(
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
@@ -185,43 +188,6 @@ def _load_model_settings() -> dict:
     }
 
 
-def sidebar_auth() -> None:
-    st.sidebar.markdown(f"### {bi('person-circle')} Login", unsafe_allow_html=True)
-
-    # Normalize any older session shapes
-    if st.session_state.get("user") is not None and not isinstance(st.session_state["user"], dict):
-        u = st.session_state["user"]
-        st.session_state["user"] = {"id": getattr(u, "id", None), "email": getattr(u, "email", None)}
-
-    if st.session_state.get("user"):
-        u = st.session_state["user"]
-        st.sidebar.markdown(f"{bi('check-circle-fill')} Logged in: **{_user_email(u)}**", unsafe_allow_html=True)
-        if st.sidebar.button("Logout", key="chat_logout"):
-            try:
-                auth_sign_out()
-            finally:
-                st.session_state.clear()
-                st.rerun()
-        return
-
-    email = st.sidebar.text_input("Email", key="chat_login_email")
-    password = st.sidebar.text_input("Password", type="password", key="chat_login_password")
-
-    if st.sidebar.button("Login", key="chat_login_btn"):
-        try:
-            res = auth_sign_in(email, password)
-        except AuthApiError:
-            st.sidebar.error("Invalid email or password.")
-            st.stop()
-
-        u = res["user"]
-        user = {"id": u.id, "email": getattr(u, "email", None) or None}
-        st.session_state["user"] = user
-
-        profile = ensure_profile(user["id"], user.get("email") or "")
-        st.session_state["role"] = (profile or {}).get("role", "user")
-        st.rerun()
-
 
 def list_conversations_for_user(user_id: str) -> list[dict]:
     try:
@@ -265,12 +231,15 @@ def embed_query(q: str, embed_model: str):
 
 # ---------- App start ----------
 
-sidebar_auth()
+# ------------------------- Auth -------------------------
 user = st.session_state.get("user")
 if not user:
-    st.markdown(f"# {bi('chat-square-text')} D+ Chatbot", unsafe_allow_html=True)
-    st.info("Please log in to continue.")
-    st.stop()
+    st.info("Please log in.")
+    st.switch_page("pages/0_Login.py")
+    
+    if st.session_state.get("role") != "admin":
+        st.error("Admin access required.")
+        st.stop()
 
 ensure_profile(user["id"], user.get("email") or "")
 
