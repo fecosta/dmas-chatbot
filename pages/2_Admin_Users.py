@@ -14,7 +14,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-apply_ui()  
+apply_ui()
 
 def bi(name: str, size: str = "1em") -> str:
     return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'

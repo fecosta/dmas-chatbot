@@ -31,14 +31,14 @@ h1, h2, h3 { letter-spacing: -0.02em; }
   background: rgba(15,23,42,.02);
 }
 
-/* Chat bubbles */
-[data-testid="stChatMessage"]{
-  border: 1px solid rgba(15,23,42,.08);
-  border-radius: 16px;
-  padding: 8px 10px;
-  margin-bottom: 10px;
-  background: #fff;
-}
+# /* Chat bubbles */
+# [data-testid="stChatMessage"]{
+#   border: 1px solid rgba(15,23,42,.08);
+#   border-radius: 16px;
+#   padding: 8px 10px;
+#   margin-bottom: 10px;
+#   background: #fff;
+# }
 [data-testid="stChatMessage"] p { margin-bottom: 0.35rem; }
 </style>
 """

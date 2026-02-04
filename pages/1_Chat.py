@@ -17,6 +17,7 @@ from core.supabase_client import (
     rpc_match_sections,
     svc,
 )
+from core.ui import apply_ui
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
@@ -56,6 +57,8 @@ st.markdown(
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
     unsafe_allow_html=True,
 )
+
+apply_ui()
 
 def bi(name: str, size: str = "1em") -> str:
     return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
