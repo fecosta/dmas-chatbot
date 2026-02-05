@@ -3,6 +3,9 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+import requests
+from urllib.parse import urlsplit
+
 from supabase import create_client, Client
 
 SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/") + "/"
@@ -50,6 +53,37 @@ def auth_sign_out() -> None:
         anon.auth.sign_out()
     except Exception:
         pass
+
+
+def normalize_site_url(raw: str) -> str:
+    """Normalize a SITE_URL for use as Supabase `redirect_to`.
+
+    We only keep scheme + host (+ optional base path) and drop any extra
+    multipage/route fragments like `/Chat/oauth/consent`.
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        return ""
+    parts = urlsplit(raw)
+    if not parts.scheme or not parts.netloc:
+        return raw.rstrip("/")
+    # Keep origin only (most reliable with Supabase allowlist)
+    return f"{parts.scheme}://{parts.netloc}".rstrip("/")
+
+
+def auth_user_from_access_token(access_token: str) -> Dict[str, Any]:
+    """Fetch user info for an OAuth access token (implicit flow)."""
+    url = SUPABASE_URL.rstrip("/") + "/auth/v1/user"
+    r = requests.get(
+        url,
+        headers={
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+        },
+        timeout=20,
+    )
+    r.raise_for_status()
+    return r.json()
 
 
 def get_profile(user_id: str) -> Optional[Dict[str, Any]]:
