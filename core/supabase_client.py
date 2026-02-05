@@ -3,8 +3,12 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+import streamlit as st
+
 import requests
 from urllib.parse import urlsplit
+
+import extra_streamlit_components as stx
 
 from supabase import create_client, Client
 
@@ -65,6 +69,83 @@ def auth_sign_out() -> None:
 def supabase_anon_client() -> Client:
     """Return an anon-key Supabase client (used for PKCE code exchange)."""
     return anon
+
+
+# ---------------- Session persistence (cookies) ----------------
+
+_COOKIE_PREFIX = "dplus_auth_"
+
+
+def _cookie_manager():
+    return stx.CookieManager()
+
+
+def save_supabase_session(session) -> None:
+    """Persist Supabase session tokens in cookies."""
+    cm = _cookie_manager()
+
+    access_token = getattr(session, "access_token", None) or session.get("access_token")
+    refresh_token = getattr(session, "refresh_token", None) or session.get("refresh_token")
+    expires_at = getattr(session, "expires_at", None) or session.get("expires_at")
+
+    ttl_days = 30
+    if access_token:
+        cm.set(f"{_COOKIE_PREFIX}access_token", access_token, expires_at=ttl_days)
+    if refresh_token:
+        cm.set(f"{_COOKIE_PREFIX}refresh_token", refresh_token, expires_at=ttl_days)
+    if expires_at:
+        cm.set(f"{_COOKIE_PREFIX}expires_at", str(expires_at), expires_at=ttl_days)
+
+
+def restore_supabase_session() -> Optional[Dict[str, Any]]:
+    """Restore Supabase session from cookies and rehydrate st.session_state."""
+    if st.session_state.get("user"):
+        return st.session_state["user"]
+
+    cm = _cookie_manager()
+    access_token = cm.get(f"{_COOKIE_PREFIX}access_token")
+    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token")
+    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at")
+
+    if not refresh_token:
+        return None
+
+    supabase = anon
+
+    # refresh if needed
+    try:
+        expires_at = int(float(expires_at_raw)) if expires_at_raw else 0
+    except Exception:
+        expires_at = 0
+
+    now = int(time.time())
+    if not access_token or (expires_at and now >= expires_at - 30):
+        refreshed = supabase.auth.refresh_session(refresh_token)
+        session = getattr(refreshed, "session", None) or refreshed.get("session") or refreshed
+        save_supabase_session(session)
+        access_token = getattr(session, "access_token", None) or session.get("access_token")
+
+    user_resp = supabase.auth.get_user(access_token)
+    user_obj = getattr(user_resp, "user", None) or user_resp.get("user")
+
+    if not user_obj:
+        return None
+
+    user_id = getattr(user_obj, "id", None) or user_obj.get("id")
+    email = getattr(user_obj, "email", None) or user_obj.get("email")
+
+    st.session_state["user"] = {"id": user_id, "email": email}
+    profile = ensure_profile(user_id, email or "")
+    st.session_state["role"] = profile.get("role", "user")
+    return st.session_state["user"]
+
+
+def clear_supabase_session() -> None:
+    cm = _cookie_manager()
+    for k in ["access_token", "refresh_token", "expires_at"]:
+        cm.delete(f"{_COOKIE_PREFIX}{k}")
+    st.session_state.pop("user", None)
+    st.session_state.pop("role", None)
 
 
 _OAUTH_STATE_TABLE = os.environ.get("DPLUS_OAUTH_STATE_TABLE", "oauth_states")

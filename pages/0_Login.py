@@ -14,12 +14,16 @@ from core.supabase_client import (
     oauth_pop_state,
     oauth_store_state,
     supabase_anon_client,
+    save_supabase_session,
+    restore_supabase_session,
 )
 
 
 st.set_page_config(page_title="Login", page_icon="🔐", layout="centered")
 ensure_bootstrap_icons()
 render_sidebar()
+
+restore_supabase_session()
 
 # Bootstrap Icons (visual-only)
 st.markdown(
@@ -70,6 +74,7 @@ if code and oauth_nonce:
         session = supabase.auth.exchange_code_for_session(
             {"auth_code": code, "code_verifier": code_verifier}
         )
+        save_supabase_session(session.session if hasattr(session, "session") else session)
 
         # Support different supabase-py return shapes
         user_obj = getattr(session, "user", None) or getattr(getattr(session, "session", None), "user", None)
@@ -150,6 +155,7 @@ password = st.text_input("Password", type="password", key="login_password")
 
 if st.button("Login", type="primary", use_container_width=True):
     res = auth_sign_in(email, password)
+    save_supabase_session(res["session"])
     user = {"id": res["user"].id, "email": res["user"].email}
     st.session_state["user"] = user
     profile = ensure_profile(user["id"], user["email"])
