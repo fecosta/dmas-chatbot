@@ -1,6 +1,7 @@
 import os
 
 from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
+from core.supabase_client import restore_supabase_session
 # Load .env locally (Render already injects env vars, so this is safe)
 if os.path.exists(".env"):
     from dotenv import load_dotenv
@@ -20,11 +21,15 @@ st.markdown(
 )
 
 # ------------------------- Auth -------------------------
+restore_supabase_session()
+
 user = st.session_state.get("user")
 if not user:
     st.info("Please log in.")
     st.switch_page("pages/0_Login.py")
     st.stop()
+
+# Home page is NOT admin-only; admin checks should be on admin pages only.
 
 st.title("D+ Chatbot — Democracia+")
 

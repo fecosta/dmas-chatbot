@@ -95,13 +95,33 @@ def save_supabase_session(session) -> None:
     refresh_token = getattr(session, "refresh_token", None) or session.get("refresh_token")
     expires_at = getattr(session, "expires_at", None) or session.get("expires_at")
 
-    ttl_days = 30
+    max_age = 30 * 24 * 60 * 60  # 30 days
+    cookie_path = "/"  # IMPORTANT: share across /Login, /Chat, etc.
+
     if access_token:
-        cm.set(f"{_COOKIE_PREFIX}access_token", access_token, expires_at=ttl_days)
+        cm.set(
+            f"{_COOKIE_PREFIX}access_token",
+            access_token,
+            key="dplus_set_access_token",
+            path=cookie_path,
+            max_age=max_age,
+        )
     if refresh_token:
-        cm.set(f"{_COOKIE_PREFIX}refresh_token", refresh_token, expires_at=ttl_days)
+        cm.set(
+            f"{_COOKIE_PREFIX}refresh_token",
+            refresh_token,
+            key="dplus_set_refresh_token",
+            path=cookie_path,
+            max_age=max_age,
+        )
     if expires_at:
-        cm.set(f"{_COOKIE_PREFIX}expires_at", str(expires_at), expires_at=ttl_days)
+        cm.set(
+            f"{_COOKIE_PREFIX}expires_at",
+            str(expires_at),
+            key="dplus_set_expires_at",
+            path=cookie_path,
+            max_age=max_age,
+        )
 
 
 def restore_supabase_session() -> Optional[Dict[str, Any]]:
@@ -110,9 +130,9 @@ def restore_supabase_session() -> Optional[Dict[str, Any]]:
         return st.session_state["user"]
 
     cm = _cookie_manager()
-    access_token = cm.get(f"{_COOKIE_PREFIX}access_token")
-    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token")
-    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at")
+    access_token = cm.get(f"{_COOKIE_PREFIX}access_token", key="dplus_get_access_token")
+    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token", key="dplus_get_refresh_token")
+    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at", key="dplus_get_expires_at")
 
     if not refresh_token:
         return None
@@ -149,8 +169,10 @@ def restore_supabase_session() -> Optional[Dict[str, Any]]:
 
 def clear_supabase_session() -> None:
     cm = _cookie_manager()
-    for k in ["access_token", "refresh_token", "expires_at"]:
-        cm.delete(f"{_COOKIE_PREFIX}{k}")
+    cookie_path = "/"
+    cm.delete(f"{_COOKIE_PREFIX}access_token", key="dplus_del_access_token", path=cookie_path)
+    cm.delete(f"{_COOKIE_PREFIX}refresh_token", key="dplus_del_refresh_token", path=cookie_path)
+    cm.delete(f"{_COOKIE_PREFIX}expires_at", key="dplus_del_expires_at", path=cookie_path)
     st.session_state.pop("user", None)
     st.session_state.pop("role", None)
 
