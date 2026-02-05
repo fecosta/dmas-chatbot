@@ -53,15 +53,15 @@ def _make_pkce() -> tuple[str, str]:
     return verifier, challenge
 
 
-# Handle OAuth return (?code=...&state=...)
+# Handle OAuth return (?code=...&oauth_nonce=...)
 code = st.query_params.get("code")
-returned_state = st.query_params.get("state")
-if code and returned_state:
+oauth_nonce = st.query_params.get("oauth_nonce")
+if code and oauth_nonce:
     try:
-        code_verifier = oauth_pop_state(returned_state)
+        code_verifier = oauth_pop_state(oauth_nonce)
         if not code_verifier:
             st.error(
-                "Google login callback is missing verifier state. "
+                "Google login callback is missing oauth nonce. "
                 "This can happen if the state expired. Please try again."
             )
             st.stop()
@@ -99,20 +99,23 @@ if code and returned_state:
 
 # Render OAuth button (start PKCE)
 if SUPABASE_URL:
-    state = secrets.token_urlsafe(32)
+    oauth_nonce = secrets.token_urlsafe(32)
     code_verifier, code_challenge = _make_pkce()
 
     # Store verifier so we can exchange after redirect
-    oauth_store_state(state, code_verifier)
+    oauth_store_state(oauth_nonce, code_verifier)
+
+    # We do NOT override Supabase's OAuth `state` (it is signed/managed by Supabase).
+    # Instead, we pass our own nonce via redirect_to so we can retrieve the PKCE verifier.
+    redirect_to = f"{SITE_URL}/?oauth_nonce={urllib.parse.quote(oauth_nonce, safe='')}"
 
     google_oauth_url = (
         f"{SUPABASE_URL}/auth/v1/authorize"
         f"?provider=google"
         f"&response_type=code"
-        f"&redirect_to={urllib.parse.quote(SITE_URL, safe='')}"
+        f"&redirect_to={urllib.parse.quote(redirect_to, safe='')}"
         f"&code_challenge={urllib.parse.quote(code_challenge, safe='')}"
         f"&code_challenge_method=s256"
-        f"&state={urllib.parse.quote(state, safe='')}"
     )
 
     st.markdown(
