@@ -130,9 +130,10 @@ def restore_supabase_session() -> Optional[Dict[str, Any]]:
         return st.session_state["user"]
 
     cm = _cookie_manager()
-    access_token = cm.get(f"{_COOKIE_PREFIX}access_token", key="dplus_get_access_token")
-    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token", key="dplus_get_refresh_token")
-    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at", key="dplus_get_expires_at")
+    # CookieManager versions differ; some don't support `key=` on get().
+    access_token = cm.get(f"{_COOKIE_PREFIX}access_token")
+    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token")
+    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at")
 
     if not refresh_token:
         return None
@@ -170,9 +171,15 @@ def restore_supabase_session() -> Optional[Dict[str, Any]]:
 def clear_supabase_session() -> None:
     cm = _cookie_manager()
     cookie_path = "/"
-    cm.delete(f"{_COOKIE_PREFIX}access_token", key="dplus_del_access_token", path=cookie_path)
-    cm.delete(f"{_COOKIE_PREFIX}refresh_token", key="dplus_del_refresh_token", path=cookie_path)
-    cm.delete(f"{_COOKIE_PREFIX}expires_at", key="dplus_del_expires_at", path=cookie_path)
+    try:
+        cm.delete(f"{_COOKIE_PREFIX}access_token", path=cookie_path)
+        cm.delete(f"{_COOKIE_PREFIX}refresh_token", path=cookie_path)
+        cm.delete(f"{_COOKIE_PREFIX}expires_at", path=cookie_path)
+    except TypeError:
+        # Older CookieManager versions may not support `path=` either.
+        cm.delete(f"{_COOKIE_PREFIX}access_token")
+        cm.delete(f"{_COOKIE_PREFIX}refresh_token")
+        cm.delete(f"{_COOKIE_PREFIX}expires_at")
     st.session_state.pop("user", None)
     st.session_state.pop("role", None)
 
