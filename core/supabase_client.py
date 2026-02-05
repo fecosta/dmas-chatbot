@@ -22,7 +22,7 @@ anon: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # create table if not exists oauth_states (
 #   state text primary key,
 #   code_verifier text not null,
-#   created_at bigint not null
+#   created_at timestamptz not null default now()
 # );
 
 
@@ -77,7 +77,6 @@ def oauth_store_state(state: str, code_verifier: str) -> None:
         {
             "state": state,
             "code_verifier": code_verifier,
-            "created_at": int(time.time()),
         }
     ).execute()
 
@@ -96,14 +95,20 @@ def oauth_pop_state(state: str) -> Optional[str]:
     if not data:
         return None
 
-    try:
-        created_at_int = int(data.get("created_at") or 0)
-    except Exception:
-        created_at_int = 0
+    created_at = data.get("created_at")
+    created_at_dt = None
+    if isinstance(created_at, str) and created_at:
+        try:
+            # Supabase returns ISO8601 strings, often ending with 'Z'
+            created_at_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except Exception:
+            created_at_dt = None
 
-    if created_at_int and (int(time.time()) - created_at_int) > _OAUTH_STATE_TTL_SECONDS:
-        svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
-        return None
+    if created_at_dt is not None:
+        age_seconds = (datetime.now(timezone.utc) - created_at_dt.astimezone(timezone.utc)).total_seconds()
+        if age_seconds > _OAUTH_STATE_TTL_SECONDS:
+            svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
+            return None
 
     # delete after read
     svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
