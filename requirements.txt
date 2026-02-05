@@ -6,3 +6,4 @@ pypdf
 numpy
 pandas
 httpx
+extra_streamlit_components
