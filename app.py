@@ -24,10 +24,7 @@ user = st.session_state.get("user")
 if not user:
     st.info("Please log in.")
     st.switch_page("pages/0_Login.py")
-    
-    if st.session_state.get("role") != "admin":
-        st.error("Admin access required.")
-        st.stop()
+    st.stop()
 
 st.title("D+ Chatbot — Democracia+")
 
