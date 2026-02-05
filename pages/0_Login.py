@@ -33,12 +33,15 @@ st.markdown(
 
 st.markdown(f"# {bi('shield-lock')} Login", unsafe_allow_html=True)
 st.caption("Sign in to access chat and your documents.")
+# If a login flow requested a redirect after cookies are written, honor it now.
+redir = st.session_state.pop("_post_login_redirect", None)
+if redir and st.session_state.get("user"):
+    st.switch_page(redir)
 
 
-if st.session_state.get("user"):
-    st.success("You are already logged in.")
-    st.page_link("pages/1_Chat.py", label="Go to Chat")
-    st.stop()
+# If already authenticated (and not currently handling an OAuth callback), go straight to Chat.
+if st.session_state.get("user") and not st.query_params.get("code"):
+    st.switch_page("pages/1_Chat.py")
 
 
 # --- Google OAuth (PKCE) ---
@@ -94,9 +97,9 @@ if code and oauth_nonce:
 
         # Clear the callback params so reruns don't re-exchange
         st.query_params.clear()
-
-        st.success("Logged in with Google.")
-        st.switch_page("pages/1_Chat.py")
+        # Let CookieManager flush cookie writes, then redirect on the next run.
+        st.session_state["_post_login_redirect"] = "pages/1_Chat.py"
+        st.rerun()
     except Exception as e:
         st.error(f"Google login failed: {e}")
         st.stop()
@@ -111,8 +114,8 @@ if SUPABASE_URL:
     oauth_store_state(oauth_nonce, code_verifier)
 
     # We do NOT override Supabase's OAuth `state` (it is signed/managed by Supabase).
-    # Instead, we pass our own nonce via redirect_to so we can retrieve the PKCE verifier.
-    redirect_to = f"{SITE_URL}/?oauth_nonce={urllib.parse.quote(oauth_nonce, safe='')}"
+    # IMPORTANT: return to the Login page so this page can exchange the OAuth code.
+    redirect_to = f"{SITE_URL}/Login?oauth_nonce={urllib.parse.quote(oauth_nonce, safe='')}"
 
     google_oauth_url = (
         f"{SUPABASE_URL}/auth/v1/authorize"
@@ -160,5 +163,5 @@ if st.button("Login", type="primary", use_container_width=True):
     st.session_state["user"] = user
     profile = ensure_profile(user["id"], user["email"])
     st.session_state["role"] = profile.get("role", "user")
-    st.success("Logged in.")
-    st.switch_page("pages/1_Chat.py")
+    st.session_state["_post_login_redirect"] = "pages/1_Chat.py"
+    st.rerun()
