@@ -18,6 +18,13 @@ svc: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 # Client-side-ish (still server in Streamlit, but uses anon + email/pass auth)
 anon: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
+# Required table in Supabase (SQL):
+# create table if not exists oauth_states (
+#   state text primary key,
+#   code_verifier text not null,
+#   created_at bigint not null
+# );
+
 
 def storage_upload(bucket: str, path: str, content: bytes, content_type: str = "application/pdf") -> None:
     # Supabase Python API uses .storage.from_(bucket).upload(...)
@@ -53,6 +60,54 @@ def auth_sign_out() -> None:
         anon.auth.sign_out()
     except Exception:
         pass
+
+
+def supabase_anon_client() -> Client:
+    """Return an anon-key Supabase client (used for PKCE code exchange)."""
+    return anon
+
+
+_OAUTH_STATE_TABLE = os.environ.get("DPLUS_OAUTH_STATE_TABLE", "oauth_states")
+_OAUTH_STATE_TTL_SECONDS = int(os.environ.get("DPLUS_OAUTH_STATE_TTL_SECONDS", "900"))  # 15 min
+
+
+def oauth_store_state(state: str, code_verifier: str) -> None:
+    """Store PKCE verifier keyed by state so Streamlit can exchange after redirect."""
+    svc.table(_OAUTH_STATE_TABLE).upsert(
+        {
+            "state": state,
+            "code_verifier": code_verifier,
+            "created_at": int(time.time()),
+        }
+    ).execute()
+
+
+def oauth_pop_state(state: str) -> Optional[str]:
+    """Fetch and delete the PKCE verifier for a given state. Returns None if missing/expired."""
+    res = (
+        svc.table(_OAUTH_STATE_TABLE)
+        .select("code_verifier, created_at")
+        .eq("state", state)
+        .maybe_single()
+        .execute()
+    )
+
+    data = getattr(res, "data", None) or (res.get("data") if isinstance(res, dict) else None)
+    if not data:
+        return None
+
+    try:
+        created_at_int = int(data.get("created_at") or 0)
+    except Exception:
+        created_at_int = 0
+
+    if created_at_int and (int(time.time()) - created_at_int) > _OAUTH_STATE_TTL_SECONDS:
+        svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
+        return None
+
+    # delete after read
+    svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
+    return data.get("code_verifier")
 
 
 def normalize_site_url(raw: str) -> str:
