@@ -5,8 +5,16 @@ from core.supabase_client import supabase_anon_client, ensure_profile
 
 COOKIE_PREFIX = "dplus_auth_"
 
+_COOKIE_MANAGER_STATE_KEY = "_dplus_cookie_manager"
+_COOKIE_MANAGER_COMPONENT_KEY = "dplus_cookie_manager"  # must match core/supabase_client.py
+
+
 def cookie_manager():
-    return stx.CookieManager()
+    cm = st.session_state.get(_COOKIE_MANAGER_STATE_KEY)
+    if cm is None:
+        cm = stx.CookieManager(key=_COOKIE_MANAGER_COMPONENT_KEY)
+        st.session_state[_COOKIE_MANAGER_STATE_KEY] = cm
+    return cm
 
 def save_supabase_session(session):
     """

@@ -74,10 +74,17 @@ def supabase_anon_client() -> Client:
 # ---------------- Session persistence (cookies) ----------------
 
 _COOKIE_PREFIX = "dplus_auth_"
+_COOKIE_MANAGER_STATE_KEY = "_dplus_cookie_manager"
+_COOKIE_MANAGER_COMPONENT_KEY = "dplus_cookie_manager"  # must be unique app-wide
 
 
 def _cookie_manager():
-    return stx.CookieManager()
+    """Return a singleton CookieManager to avoid StreamlitDuplicateElementKey('init')."""
+    cm = st.session_state.get(_COOKIE_MANAGER_STATE_KEY)
+    if cm is None:
+        cm = stx.CookieManager(key=_COOKIE_MANAGER_COMPONENT_KEY)
+        st.session_state[_COOKIE_MANAGER_STATE_KEY] = cm
+    return cm
 
 
 def save_supabase_session(session) -> None:
