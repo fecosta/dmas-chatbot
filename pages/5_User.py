@@ -1,5 +1,5 @@
 import streamlit as st
-from core.supabase_client import get_profile
+from core.supabase_client import get_profile, restore_supabase_session
 from core.sidebar_ui import render_sidebar, bi, ensure_bootstrap_icons
 
 st.set_page_config(page_title="User", page_icon="👤", layout="centered")
@@ -12,10 +12,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+restore_supabase_session()
+
 user = st.session_state.get("user")
 if not user:
     st.info("Please log in to view your profile.")
     st.switch_page("pages/0_Login.py")
+    st.stop()
 
 profile = get_profile(user["id"]) or {}
 

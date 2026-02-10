@@ -1,7 +1,7 @@
 import streamlit as st
 from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.ui import apply_ui, sidebar_brand, page_header
-from core.supabase_client import svc, ensure_profile, auth_sign_in, auth_sign_out
+from core.supabase_client import svc, ensure_profile, restore_supabase_session
 from supabase_auth.errors import AuthApiError
 from datetime import datetime
 
@@ -48,14 +48,13 @@ def list_conversations_for_user(user_id: str) -> list[dict]:
     )
 
 # ------------------------- Auth -------------------------
+restore_supabase_session()
+
 user = st.session_state.get("user")
 if not user:
     st.info("Please log in.")
     st.switch_page("pages/0_Login.py")
-    
-    if st.session_state.get("role") != "admin":
-        st.error("Admin access required.")
-        st.stop()
+    st.stop()
 
 ensure_profile(user["id"], user.get("email") or "")
 user_id = user["id"]

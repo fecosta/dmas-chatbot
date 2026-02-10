@@ -8,6 +8,8 @@ if os.path.exists(".env"):
     load_dotenv()
 import streamlit as st
 
+
+
 st.set_page_config(page_title="D+ Chatbot", page_icon="🗳️", layout="wide")
 ensure_bootstrap_icons()
 render_sidebar()

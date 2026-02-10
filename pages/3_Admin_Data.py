@@ -9,9 +9,8 @@ from core.ui import apply_ui
 from core.utils import safe_filename, sha256_bytes
 
 from core.supabase_client import (
-    auth_sign_in,
-    auth_sign_out,
     ensure_profile,
+    restore_supabase_session,
     get_profile,
     list_documents,
     insert_document,
@@ -43,14 +42,13 @@ def bi(name: str, size: str = "1em") -> str:
     return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
 
 # ------------------------- Auth -------------------------
+restore_supabase_session()
+
 user = st.session_state.get("user")
 if not user:
     st.info("Please log in.")
     st.switch_page("pages/0_Login.py")
-    
-    if st.session_state.get("role") != "admin":
-        st.error("Admin access required.")
-        st.stop()
+    st.stop()
 
 user_id = user["id"]
 role = st.session_state.get("role", "user")

@@ -3,7 +3,7 @@ import streamlit as st
 from supabase_auth.errors import AuthApiError
 
 from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
-from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, svc
+from core.supabase_client import ensure_profile, restore_supabase_session, svc
 from core.ui import apply_ui
 
 st.set_page_config(page_title="Admin — Model", page_icon="🧠", layout="centered")
@@ -23,10 +23,13 @@ def bi(name: str, size: str = "1em") -> str:
 
 
 # ------------------------- Auth -------------------------
+restore_supabase_session()
+
 user = st.session_state.get("user")
 if not user:
     st.info("Please log in.")
     st.switch_page("pages/0_Login.py")
+    st.stop()
 
 if st.session_state.get("role") != "admin":
     st.error("Admin access required.")
