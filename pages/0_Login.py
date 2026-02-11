@@ -17,7 +17,7 @@ from core.supabase_client import (
 )
 
 
-st.set_page_config(page_title="Login", page_icon="🔐", layout="centered")
+st.set_page_config(page_title="Login", page_icon="./static/shield-lock.svg", layout="centered")
 ensure_bootstrap_icons()
 render_sidebar()
 
@@ -129,7 +129,7 @@ if SUPABASE_URL:
             margin-bottom: 0.75rem;
           \">
             <i class=\"bi bi-google\" style=\"margin-right:8px;\"></i>
-            Continue with Google
+            Login with Google
           </button>
         </a>
         """,

@@ -4,7 +4,7 @@ from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import auth_sign_in, auth_sign_out, ensure_profile, svc
 from core.ui import apply_ui
 
-st.set_page_config(page_title="Admin — Users", page_icon="👥", layout="centered")
+st.set_page_config(page_title="Admin — Users", page_icon="./static/logo-dmas.svg", layout="centered")
 ensure_bootstrap_icons()
 render_sidebar()
 

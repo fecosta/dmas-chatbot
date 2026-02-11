@@ -49,7 +49,7 @@ DEFAULTS = {
 oai = OpenAI(api_key=OPENAI_API_KEY)
 claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-st.set_page_config(page_title="Chat", page_icon="💬", layout="wide")
+st.set_page_config(page_title="Chat", page_icon="./static/logo-dmas.svg", layout="wide")
 ensure_bootstrap_icons()
 render_sidebar()
 # Bootstrap Icons (visual only; safe)

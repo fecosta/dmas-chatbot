@@ -3,8 +3,12 @@ import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+import streamlit as st
+
 import requests
 from urllib.parse import urlsplit
+
+import extra_streamlit_components as stx
 
 from supabase import create_client, Client
 
@@ -22,7 +26,7 @@ anon: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 # create table if not exists oauth_states (
 #   state text primary key,
 #   code_verifier text not null,
-#   created_at bigint not null
+#   created_at timestamptz not null default now()
 # );
 
 
@@ -67,17 +71,136 @@ def supabase_anon_client() -> Client:
     return anon
 
 
+# ---------------- Session persistence (cookies) ----------------
+
+_COOKIE_PREFIX = "dplus_auth_"
+_COOKIE_MANAGER_STATE_KEY = "_dplus_cookie_manager"
+_COOKIE_MANAGER_COMPONENT_KEY = "dplus_cookie_manager"  # must be unique app-wide
+
+
+def _cookie_manager():
+    """Return a singleton CookieManager to avoid StreamlitDuplicateElementKey('init')."""
+    cm = st.session_state.get(_COOKIE_MANAGER_STATE_KEY)
+    if cm is None:
+        cm = stx.CookieManager(key=_COOKIE_MANAGER_COMPONENT_KEY)
+        st.session_state[_COOKIE_MANAGER_STATE_KEY] = cm
+    return cm
+
+
+def save_supabase_session(session) -> None:
+    """Persist Supabase session tokens in cookies."""
+    cm = _cookie_manager()
+
+    access_token = getattr(session, "access_token", None) or session.get("access_token")
+    refresh_token = getattr(session, "refresh_token", None) or session.get("refresh_token")
+    expires_at = getattr(session, "expires_at", None) or session.get("expires_at")
+
+    max_age = 30 * 24 * 60 * 60  # 30 days
+    cookie_path = "/"  # IMPORTANT: share across /Login, /Chat, etc.
+
+    if access_token:
+        cm.set(
+            f"{_COOKIE_PREFIX}access_token",
+            access_token,
+            key="dplus_set_access_token",
+            path=cookie_path,
+            max_age=max_age,
+        )
+    if refresh_token:
+        cm.set(
+            f"{_COOKIE_PREFIX}refresh_token",
+            refresh_token,
+            key="dplus_set_refresh_token",
+            path=cookie_path,
+            max_age=max_age,
+        )
+    if expires_at:
+        cm.set(
+            f"{_COOKIE_PREFIX}expires_at",
+            str(expires_at),
+            key="dplus_set_expires_at",
+            path=cookie_path,
+            max_age=max_age,
+        )
+
+
+def restore_supabase_session() -> Optional[Dict[str, Any]]:
+    """Restore Supabase session from cookies and rehydrate st.session_state."""
+    if st.session_state.get("user"):
+        return st.session_state["user"]
+
+    cm = _cookie_manager()
+    # CookieManager versions differ; some don't support `key=` on get().
+    access_token = cm.get(f"{_COOKIE_PREFIX}access_token")
+    refresh_token = cm.get(f"{_COOKIE_PREFIX}refresh_token")
+    expires_at_raw = cm.get(f"{_COOKIE_PREFIX}expires_at")
+
+    if not refresh_token:
+        return None
+
+    supabase = anon
+
+    # refresh if needed
+    try:
+        expires_at = int(float(expires_at_raw)) if expires_at_raw else 0
+    except Exception:
+        expires_at = 0
+
+    now = int(time.time())
+    if not access_token or (expires_at and now >= expires_at - 30):
+        refreshed = supabase.auth.refresh_session(refresh_token)
+        session = getattr(refreshed, "session", None) or refreshed.get("session") or refreshed
+        save_supabase_session(session)
+        access_token = getattr(session, "access_token", None) or session.get("access_token")
+
+    user_resp = supabase.auth.get_user(access_token)
+    user_obj = getattr(user_resp, "user", None) or user_resp.get("user")
+
+    if not user_obj:
+        return None
+
+    user_id = getattr(user_obj, "id", None) or user_obj.get("id")
+    email = getattr(user_obj, "email", None) or user_obj.get("email")
+
+    st.session_state["user"] = {"id": user_id, "email": email}
+    profile = ensure_profile(user_id, email or "")
+    st.session_state["role"] = profile.get("role", "user")
+    return st.session_state["user"]
+
+
+def clear_supabase_session() -> None:
+    cm = _cookie_manager()
+    cookie_path = "/"
+    try:
+        cm.delete(f"{_COOKIE_PREFIX}access_token", path=cookie_path)
+        cm.delete(f"{_COOKIE_PREFIX}refresh_token", path=cookie_path)
+        cm.delete(f"{_COOKIE_PREFIX}expires_at", path=cookie_path)
+    except TypeError:
+        # Older CookieManager versions may not support `path=` either.
+        cm.delete(f"{_COOKIE_PREFIX}access_token")
+        cm.delete(f"{_COOKIE_PREFIX}refresh_token")
+        cm.delete(f"{_COOKIE_PREFIX}expires_at")
+    st.session_state.pop("user", None)
+    st.session_state.pop("role", None)
+
+
 _OAUTH_STATE_TABLE = os.environ.get("DPLUS_OAUTH_STATE_TABLE", "oauth_states")
 _OAUTH_STATE_TTL_SECONDS = int(os.environ.get("DPLUS_OAUTH_STATE_TTL_SECONDS", "900"))  # 15 min
 
 
 def oauth_store_state(state: str, code_verifier: str) -> None:
-    """Store PKCE verifier keyed by state so Streamlit can exchange after redirect."""
+    """Store PKCE verifier keyed by state so Streamlit can exchange after redirect.
+
+    Important: PostgREST expects ISO8601 strings for timestamptz fields. Some environments
+    accidentally pass Unix epoch seconds (e.g. 1770839889) which will error if mapped to a
+    timestamptz column. We always write an explicit ISO timestamp here.
+    """
+    now_iso = datetime.now(timezone.utc).isoformat()
     svc.table(_OAUTH_STATE_TABLE).upsert(
         {
             "state": state,
             "code_verifier": code_verifier,
-            "created_at": int(time.time()),
+            "created_at": now_iso,
         }
     ).execute()
 
@@ -96,14 +219,20 @@ def oauth_pop_state(state: str) -> Optional[str]:
     if not data:
         return None
 
-    try:
-        created_at_int = int(data.get("created_at") or 0)
-    except Exception:
-        created_at_int = 0
+    created_at = data.get("created_at")
+    created_at_dt = None
+    if isinstance(created_at, str) and created_at:
+        try:
+            # Supabase returns ISO8601 strings, often ending with 'Z'
+            created_at_dt = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except Exception:
+            created_at_dt = None
 
-    if created_at_int and (int(time.time()) - created_at_int) > _OAUTH_STATE_TTL_SECONDS:
-        svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
-        return None
+    if created_at_dt is not None:
+        age_seconds = (datetime.now(timezone.utc) - created_at_dt.astimezone(timezone.utc)).total_seconds()
+        if age_seconds > _OAUTH_STATE_TTL_SECONDS:
+            svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
+            return None
 
     # delete after read
     svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()

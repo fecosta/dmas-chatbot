@@ -2,7 +2,7 @@ import streamlit as st
 from core.supabase_client import get_profile
 from core.sidebar_ui import render_sidebar, bi, ensure_bootstrap_icons
 
-st.set_page_config(page_title="User", page_icon="👤", layout="centered")
+st.set_page_config(page_title="User", page_icon="./static/logo-dmas.svg", layout="centered")
 ensure_bootstrap_icons()
 render_sidebar()
 
