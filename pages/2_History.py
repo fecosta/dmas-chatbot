@@ -5,7 +5,7 @@ from core.supabase_client import svc, ensure_profile, restore_supabase_session
 from supabase_auth.errors import AuthApiError
 from datetime import datetime
 
-st.set_page_config(page_title="History", page_icon="🕓", layout="centered")
+st.set_page_config(page_title="History", page_icon="./static/logo-dmas.svg", layout="centered")
 ensure_bootstrap_icons()
 render_sidebar()
 

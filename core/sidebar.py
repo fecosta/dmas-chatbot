@@ -34,7 +34,7 @@ def require_admin() -> None:
         st.stop()
 
 
-def sidebar_nav(app_title: str = "D+ Chatbot") -> Tuple[Optional[Dict[str, Any]], str]:
+def sidebar_nav(app_title: str = "./static/logo-dmas.svg") -> Tuple[Optional[Dict[str, Any]], str]:
     """Render the shared sidebar (icons + nav). Returns (user, role)."""
     ensure_bootstrap_icons()
     user, role = get_user_and_role()
