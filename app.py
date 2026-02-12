@@ -2,6 +2,7 @@ import os
 
 from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import restore_supabase_session
+from core.ui import apply_ui
 # Load .env locally (Render already injects env vars, so this is safe)
 if os.path.exists(".env"):
     from dotenv import load_dotenv
@@ -14,6 +15,14 @@ TAGLINE = "Conversational Intelligence for Organizations"
 st.set_page_config(page_title=APP_NAME, page_icon="./static/shield-lock.svg", layout="wide")
 ensure_bootstrap_icons()
 render_sidebar(app_title=APP_NAME)
+
+# Bootstrap Icons (visual-only)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+apply_ui()
 
 # ------------------------- Auth -------------------------
 restore_supabase_session()
