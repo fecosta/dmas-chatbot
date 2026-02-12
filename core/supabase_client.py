@@ -190,12 +190,12 @@ _OAUTH_STATE_TTL_SECONDS = int(os.environ.get("DPLUS_OAUTH_STATE_TTL_SECONDS", "
 
 def oauth_store_state(state: str, code_verifier: str) -> None:
     """Store PKCE verifier keyed by state so Streamlit can exchange after redirect.
-
     Important: PostgREST expects ISO8601 strings for timestamptz fields. Some environments
     accidentally pass Unix epoch seconds (e.g. 1770839889) which will error if mapped to a
     timestamptz column. We always write an explicit ISO timestamp here.
     """
     now_iso = datetime.now(timezone.utc).isoformat()
+
     svc.table(_OAUTH_STATE_TABLE).upsert(
         {
             "state": state,
