@@ -18,6 +18,7 @@ from core.supabase_client import (
     svc,
 )
 from core.ui import apply_ui
+from core.llm import detect_user_language, language_instruction, conversational_instruction, lexical_overlap_count, is_language_mismatch, enforced_rules_header
 
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
@@ -357,15 +358,93 @@ msgs = (
     or []
 )
 
+
 for m in msgs:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
+# Keep a tiny, safer tail of recent turns to preserve local coherence
+# without resurfacing early-topic assistant content.
+# Strategy: last 2 USER messages + last 1 ASSISTANT message (if present).
+recent_turns = []
+user_kept = 0
+assistant_kept = 0
+
+for m in reversed(msgs or []):
+    role = (m.get("role") or "").strip().lower()
+    content = (m.get("content") or "").strip()
+    if not content or role not in ("user", "assistant"):
+        continue
+
+    if role == "user":
+        if user_kept >= 2:
+            continue
+        user_kept += 1
+    else:
+        if assistant_kept >= 1:
+            continue
+        assistant_kept += 1
+
+    # Cap per-message length to keep prompts tight
+    if len(content) > 500:
+        content = content[:497].rstrip() + "…"
+
+    recent_turns.append(f"{role.upper()}: {content}")
+
+    # Stop early once we have enough
+    if user_kept >= 2 and assistant_kept >= 1:
+        break
+
+# Reverse back to chronological order
+recent_history_block = "\n".join(reversed(recent_turns))
+
 prompt = st.chat_input("Ask a question…") 
 
 if prompt:
+    detected_lang = detect_user_language(prompt)
+    prev_lang = st.session_state.get("conversation_lang")
+
+    # Sticky language: if we previously established PT/ES and the detector falls back to EN
+    # on a short prompt, keep the previous language unless the user clearly switches.
+    if prev_lang in ("pt", "es") and detected_lang == "en":
+        answer_lang = prev_lang
+    else:
+        answer_lang = detected_lang
+
+    st.session_state["conversation_lang"] = answer_lang
     # Auto-title conversation if still default
     maybe_autotitle_conversation(cid, prompt)
+
+    # Deterministic handling: this app does not do live web browsing.
+    if re.search(r"\b(busca\s+na\s+web|pesquis(a|ar)\s+na\s+web|buscar\s+na\s+internet|pesquis(a|ar)\s+na\s+internet|web\s+search|browse\s+the\s+web|buscar\s+en\s+la\s+web|buscar\s+en\s+internet|búsqueda\s+en\s+la\s+web)\b", prompt, re.IGNORECASE):
+        if answer_lang == "pt":
+            answer = (
+                "Consigo te ajudar a formular a busca, mas este chat (no app) não faz navegação na web em tempo real. "
+                "Se você me disser o que quer encontrar, eu monto as melhores consultas, fontes recomendadas e critérios de verificação — "
+                "ou posso responder com base nos documentos que você enviou."
+            )
+        elif answer_lang == "es":
+            answer = (
+                "Puedo ayudarte a formular la búsqueda, pero este chat (en la app) no navega la web en tiempo real. "
+                "Si me dices qué quieres encontrar, preparo las mejores consultas, fuentes recomendadas y criterios de verificación — "
+                "o puedo responder basándome en los documentos que subiste."
+            )
+        else:
+            answer = (
+                "I can help you craft the web search, but this in-app chat doesn't browse the web in real time. "
+                "Tell me what you want to find and I’ll propose the best queries, sources to check, and verification steps — "
+                "or I can answer based on the documents you uploaded."
+            )
+
+        svc.table("messages").insert({"conversation_id": cid, "role": "user", "content": prompt}).execute()
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            st.markdown(answer)
+
+        svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
+        st.stop()
 
     svc.table("messages").insert(
         {"conversation_id": cid, "role": "user", "content": prompt}
@@ -407,6 +486,13 @@ if prompt:
             txt = (h.get("content") or h.get("text") or "").strip()
             if not txt:
                 continue
+            # Cheap relevance filter to prevent unrelated chunks from dominating.
+            # This helps avoid the model "bringing back" old topics.
+            overlap = lexical_overlap_count(prompt, txt)
+            # For very short prompts, allow small overlap; otherwise require more.
+            min_overlap = 1 if len(prompt.strip()) < 40 else 2
+            if overlap < min_overlap:
+                continue
 
             path = (h.get("path") or h.get("section_path") or h.get("filename") or "Source").strip()
             doc_id = h.get("document_id") or h.get("doc_id")
@@ -421,21 +507,46 @@ if prompt:
             sources.append(chunk)
 
         if not sources:
-            answer = (
-                "I couldn’t find relevant information in the uploaded documents to answer that. "
-                "Try rephrasing your question or upload a document that covers this topic."
-            )
+            if answer_lang == "pt":
+                answer = (
+                    "Não encontrei informações relevantes nos documentos enviados para responder a isso. "
+                    "Tente reformular a pergunta ou envie um documento que trate desse tema."
+                )
+            elif answer_lang == "es":
+                answer = (
+                    "No encontré información relevante en los documentos cargados para responder eso. "
+                    "Intenta reformular tu pregunta o sube un documento que cubra este tema."
+                )
+            else:
+                answer = (
+                    "I couldn’t find relevant information in the uploaded documents to answer that. "
+                    "Try rephrasing your question or upload a document that covers this topic."
+                )
             st.markdown(answer)
             svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
         else:
-            sys = settings["system_prompt"].strip() + "\n\n" + _style_instruction(settings.get("answer_style", "concise"))
+            sys = (
+                enforced_rules_header(answer_lang)
+                + language_instruction(answer_lang)
+                + "\n\n"
+                + "Cheque final antes de responder:\n"
+                + "- Garanta que toda a resposta está no idioma exigido.\n"
+                + "- Se alguma frase estiver em outro idioma, reescreva tudo no idioma exigido.\n\n"
+                + conversational_instruction(answer_lang)
+                + "\n\n"
+                + _style_instruction(settings.get("answer_style", "concise"))
+                + "\n\n"
+                + (settings["system_prompt"].strip() or "")
+            )
             ctx = "\n\n".join(sources)
             user_msg = (
                 _mode_hint(prompt)
+                + ("RECENT CHAT (for resolving references only; ignore if unrelated):\n" + recent_history_block + "\n\n" if recent_history_block else "")
                 + f"QUESTION:\n{prompt}\n\n"
                 + "CONTEXT (reference only; do not mirror its formatting):\n"
                 + f"{ctx}\n\n"
-                + "Use the context above as evidence. If it is insufficient, say what is missing."
+                + "Use the context above as evidence for any factual claims. "
+                + "If the context is insufficient, say what is missing and ask 1 clarifying question."
             )
 
             models = settings.get("claude_models") or [
@@ -463,6 +574,29 @@ if prompt:
 
             if not answer:
                 raise RuntimeError(f"Claude call failed for models={models}. Last error: {last_err}")
+
+            # If the model drifted into English for PT/ES, do a single rewrite pass.
+            if is_language_mismatch(answer_lang, answer):
+                rewrite_lang = "PT-BR" if answer_lang == "pt" else "ES"
+                rewrite_user = (
+                    f"Rewrite the following answer entirely in {rewrite_lang}. "
+                    "Do not add new facts. Do not mention protocols or internal rules.\n\n"
+                    f"ANSWER TO REWRITE:\n{answer}"
+                )
+                try:
+                    resp2 = claude.messages.create(
+                        model=models[0],
+                        max_tokens=int(settings["claude_max_tokens"]),
+                        temperature=0.0,
+                        system=sys,
+                        messages=[{"role": "user", "content": rewrite_user}],
+                    )
+                    rewritten = resp2.content[0].text if resp2.content else ""
+                    if rewritten:
+                        answer = rewritten
+                except Exception:
+                    # If rewrite fails, keep original answer (do not break chat)
+                    pass
 
             st.markdown(answer)
             svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
