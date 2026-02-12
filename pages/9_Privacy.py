@@ -2,13 +2,22 @@ import streamlit as st
 
 from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import restore_supabase_session
+from core.ui import apply_ui
 
 
-APP_NAME = "Democracia Mas Chat"
+APP_NAME = "D+ Agora"
 
 st.set_page_config(page_title="Privacy Policy", page_icon="./static/shield-lock.svg", layout="wide")
 ensure_bootstrap_icons()
 render_sidebar(app_title=APP_NAME)
+
+# Bootstrap Icons (visual-only)
+st.markdown(
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
+    unsafe_allow_html=True,
+)
+
+apply_ui()
 
 # If the user is logged in, keep the session fresh.
 restore_supabase_session()
@@ -18,11 +27,11 @@ st.caption("Last updated: 2026-02-12")
 
 st.markdown(
     """
-This Privacy Policy explains how **D+ Chat** ("the app") handles data.
+This Privacy Policy explains how **D+ Agora** ("the app") handles data.
 
 ### What the app is
 
-D+ Chat is a document-based chatbot. You can upload documents (for example, PDFs) and ask questions.
+D+ Agora is a document-based conversational intelligence tool. You can upload documents (for example, PDFs) and ask questions.
 The app retrieves relevant passages and uses AI to generate answers.
 
 ### Data we collect
@@ -63,6 +72,6 @@ For privacy questions, contact: **contato@democraciamas.com**
 """
 )
 
-st.markdown("---")
 st.page_link("app.py", label="Back to Home")
 st.page_link("pages/0_Login.py", label="Go to Login")
+st.page_link("pages/10_Terms.py", label="Terms & Conditions")

@@ -27,7 +27,7 @@ def nav_item(icon: str, label: str, page: str):
     with c2:
         st.page_link(page, label=label)
 
-def render_sidebar(app_title="D+ Chat"):
+def render_sidebar(app_title="D+ Agora"):
     ensure_bootstrap_icons()
 
     user = st.session_state.get("user")
@@ -73,3 +73,4 @@ def render_sidebar(app_title="D+ Chat"):
     st.sidebar.markdown("---")
     st.sidebar.caption("Legal")
     nav_item("file-text", "Privacy Policy", "pages/9_Privacy.py")
+    nav_item("file-earmark-text", "Terms & Conditions", "pages/10_Terms.py")

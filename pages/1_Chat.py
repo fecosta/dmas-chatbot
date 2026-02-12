@@ -50,10 +50,11 @@ DEFAULTS = {
 oai = OpenAI(api_key=OPENAI_API_KEY)
 claude = Anthropic(api_key=ANTHROPIC_API_KEY)
 
-st.set_page_config(page_title="Chat", page_icon="./static/logo-dmas.svg", layout="wide")
+st.set_page_config(page_title="D+ Agora — Chat", page_icon="./static/logo-dmas.svg", layout="wide")
 ensure_bootstrap_icons()
-render_sidebar()
-# Bootstrap Icons (visual only; safe)
+render_sidebar(app_title="D+ Agora")
+
+# Bootstrap Icons (visual-only)
 st.markdown(
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
     unsafe_allow_html=True,

@@ -8,7 +8,8 @@ if os.path.exists(".env"):
     load_dotenv()
 import streamlit as st
 
-APP_NAME = "D+ Chat"
+APP_NAME = "D+ Agora"
+TAGLINE = "Conversational Intelligence for Organizations"
 
 st.set_page_config(page_title=APP_NAME, page_icon="./static/shield-lock.svg", layout="wide")
 ensure_bootstrap_icons()
@@ -24,6 +25,7 @@ def _legal_footer() -> None:
 **Legal**
 
 - [Privacy Policy](Privacy)
+- [Terms & Conditions](Terms)
 """
     )
 
@@ -32,19 +34,20 @@ role = st.session_state.get("role", "user")
 
 if not user:
     st.title(APP_NAME)
-    st.caption("Democracia+ — document Q&A with citations for internal and public PDFs.")
+    st.caption(TAGLINE)
 
     st.markdown(
         """
-### What this app does
+**D+ Agora permite transformar experiencia acumulada en capacidad instalada.**  
+Lo que antes estaba disperso en documentos y equipos, ahora se convierte en diálogo estructurado que acompaña la acción.
 
-Democracia Mas Chat lets you **upload PDFs** and then **chat with them**. It uses a retrieval system to find the
-most relevant passages and an AI model to answer your questions, so you can:
+Las organizaciones que impulsan liderazgo político y fortalecimiento democrático generan conocimiento valioso: metodologías,
+aprendizajes, marcos conceptuales y experiencias territoriales. Sin embargo, ese conocimiento muchas veces queda fragmentado,
+difícil de transferir o dependiente de personas específicas.
 
-- quickly understand long documents
-- ask questions and get grounded answers (with sources)
-- keep a searchable history of your conversations
-"""
+D+ Agora convierte ese acervo en una infraestructura de inteligencia conversacional para que tu organización pueda consultar,
+entender y aplicar su conocimiento con claridad y coherencia.
+        """
     )
 
     c1, c2 = st.columns([1, 2], gap="small")
@@ -57,17 +60,20 @@ most relevant passages and an AI model to answer your questions, so you can:
 # Home page is NOT admin-only; admin checks should be on admin pages only.
 
 st.title(f"{APP_NAME} — Democracia+")
+st.caption(TAGLINE)
 
 st.markdown(
     """
-This app is split into independent sections:
+D+ Agora organiza el conocimiento institucional y lo vuelve accesible en tiempo real a través de conversación.
 
-- **Chat** — the user interface
-- **Admin → Users** — manage accounts and roles
-- **Admin → Data** — upload documents and process PDFs
-- **Admin → Model** — model & retrieval settings
+**Secciones**
 
-Use the sidebar to navigate pages.
+- **Chat** — Interactúa con la base de conocimiento y obtén respuestas contextualizadas.
+- **Admin → Users** — Gestiona cuentas y roles.
+- **Admin → Data** — Gestiona documentos y procesamiento.
+- **Admin → Model** — Configura modelos y parámetros de recuperación.
+
+Usa la barra lateral para navegar.
 """
 )
 
