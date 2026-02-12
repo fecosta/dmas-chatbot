@@ -8,32 +8,55 @@ if os.path.exists(".env"):
     load_dotenv()
 import streamlit as st
 
+APP_NAME = "D+ Chat"
 
-
-st.set_page_config(page_title="D+ Chatbot", page_icon="🗳️", layout="wide")
+st.set_page_config(page_title=APP_NAME, page_icon="./static/shield-lock.svg", layout="wide")
 ensure_bootstrap_icons()
-render_sidebar()
-
-st.markdown(
-    """
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-    """,
-    unsafe_allow_html=True,
-)
+render_sidebar(app_title=APP_NAME)
 
 # ------------------------- Auth -------------------------
 restore_supabase_session()
 
+def _legal_footer() -> None:
+    st.markdown(
+        """
+---
+**Legal**
+
+- [Privacy Policy](Privacy)
+"""
+    )
+
 user = st.session_state.get("user")
+role = st.session_state.get("role", "user")
+
 if not user:
-    st.info("Please log in.")
-    st.switch_page("pages/0_Login.py")
+    st.title(APP_NAME)
+    st.caption("Democracia+ — document Q&A with citations for internal and public PDFs.")
+
+    st.markdown(
+        """
+### What this app does
+
+Democracia Mas Chat lets you **upload PDFs** and then **chat with them**. It uses a retrieval system to find the
+most relevant passages and an AI model to answer your questions, so you can:
+
+- quickly understand long documents
+- ask questions and get grounded answers (with sources)
+- keep a searchable history of your conversations
+"""
+    )
+
+    c1, c2 = st.columns([1, 2], gap="small")
+    with c1:
+        if st.button("Go to Login", type="primary", use_container_width=True):
+            st.switch_page("pages/0_Login.py")
+    _legal_footer()
     st.stop()
 
 # Home page is NOT admin-only; admin checks should be on admin pages only.
 
-st.title("D+ Chatbot — Democracia+")
+st.title(f"{APP_NAME} — Democracia+")
 
 st.markdown(
     """
@@ -48,13 +71,15 @@ Use the sidebar to navigate pages.
 """
 )
 
-# Just show env sanity (optional)
-missing = []
-for k in ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]:
-    if not os.environ.get(k):
-        missing.append(k)
+_legal_footer()
 
-if missing:
-    st.warning("Missing env vars: " + ", ".join(missing))
-else:
-    st.success("Environment looks good.")
+if role == "admin":
+    missing = []
+    for k in ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"]:
+        if not os.environ.get(k):
+            missing.append(k)
+
+    if missing:
+        st.warning("Missing env vars: " + ", ".join(missing))
+    else:
+        st.success("Environment looks good.")

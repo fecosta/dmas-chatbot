@@ -27,7 +27,7 @@ def nav_item(icon: str, label: str, page: str):
     with c2:
         st.page_link(page, label=label)
 
-def render_sidebar(app_title="D+ Chatbot"):
+def render_sidebar(app_title="D+ Chat"):
     ensure_bootstrap_icons()
 
     user = st.session_state.get("user")
@@ -69,3 +69,7 @@ def render_sidebar(app_title="D+ Chatbot"):
         nav_item("cpu", "Admin — Model", "pages/4_Admin_Model.py")
     else:
         st.sidebar.caption("Admin pages are available to admins only.")
+
+    st.sidebar.markdown("---")
+    st.sidebar.caption("Legal")
+    nav_item("file-text", "Privacy Policy", "pages/9_Privacy.py")
