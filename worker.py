@@ -12,9 +12,10 @@ from core.supabase_client import (
     svc,
 )
 from core.pdf_extract import build_sections_from_pdf
+from core.env_validator import get_required_env, get_optional_env
 
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")  # 1536 dims
+OPENAI_API_KEY = get_required_env("OPENAI_API_KEY", "OpenAI API key for embeddings")
+EMBED_MODEL = get_optional_env("EMBEDDING_MODEL", "text-embedding-3-small")  # 1536 dims
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 

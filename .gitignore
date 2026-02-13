@@ -1,16 +1,18 @@
+
 .DS_Store
 .devcontainer/
 .venv/
 .env/
+.env
 _temp/
 pdf/
 pdf-cleaner/
-.env
 .vscode/
 .idea/
 __pycache__/
 *.pdf
 *.sqlite3
+*.db
 *.pyc
 *.pyo
 *.pyd
@@ -20,3 +22,6 @@ __pycache__/
 *.swp
 *.swo
 *.DS_Store
+/migrations/
+# Legacy SQLite database (app migrated to Supabase)
+data/app.db

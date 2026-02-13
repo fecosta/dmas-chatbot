@@ -19,9 +19,11 @@ from core.supabase_client import (
 )
 from core.ui import apply_ui
 from core.llm import detect_user_language, language_instruction, conversational_instruction, lexical_overlap_count, is_language_mismatch, enforced_rules_header
+from core.env_validator import get_required_env
+from core.rate_limiter import check_rate_limit
 
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
+OPENAI_API_KEY = get_required_env("OPENAI_API_KEY", "OpenAI API key for embeddings")
+ANTHROPIC_API_KEY = get_required_env("ANTHROPIC_API_KEY", "Anthropic API key for Claude")
 
 # Environment defaults (Admin → Model can override at runtime)
 ENV_EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small").strip()
@@ -278,27 +280,18 @@ def save_message(conversation_id: str, role: str, content: str) -> None:
         raise
 
 
-def check_rate_limit(user_id: str) -> bool:
-    """Check if user has exceeded rate limit. Returns True if allowed, False if rate limited."""
-    from time import time
+def _check_user_rate_limit(user_id: str) -> tuple[bool, int]:
+    """Check if user has exceeded rate limit using database-backed rate limiter.
 
-    if "rate_limit_timestamps" not in st.session_state:
-        st.session_state["rate_limit_timestamps"] = []
-
-    now = time()
-    # Remove timestamps older than the window
-    st.session_state["rate_limit_timestamps"] = [
-        ts for ts in st.session_state["rate_limit_timestamps"]
-        if now - ts < RATE_LIMIT_WINDOW_SECONDS
-    ]
-
-    # Check if limit exceeded
-    if len(st.session_state["rate_limit_timestamps"]) >= RATE_LIMIT_MESSAGES_PER_MINUTE:
-        return False
-
-    # Add current timestamp
-    st.session_state["rate_limit_timestamps"].append(now)
-    return True
+    Returns:
+        Tuple of (is_allowed, seconds_until_reset)
+    """
+    return check_rate_limit(
+        user_id=user_id,
+        action="chat_message",
+        max_requests=RATE_LIMIT_MESSAGES_PER_MINUTE,
+        window_seconds=RATE_LIMIT_WINDOW_SECONDS
+    )
 
 
 # ---------- App start ----------
@@ -484,9 +477,10 @@ if prompt:
         st.stop()
 
     # Check rate limit
-    if not check_rate_limit(user_id):
+    allowed, wait_time = _check_user_rate_limit(user_id)
+    if not allowed:
         st.error(
-            f"Too many messages. Please wait a moment before sending more messages. "
+            f"Too many messages. Please wait {wait_time} seconds before sending more messages. "
             f"(Limit: {RATE_LIMIT_MESSAGES_PER_MINUTE} messages per {RATE_LIMIT_WINDOW_SECONDS} seconds)"
         )
         st.stop()

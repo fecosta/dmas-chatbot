@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 import re
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
 def utc_now_iso() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def ensure_dirs(data_dir: str) -> None:

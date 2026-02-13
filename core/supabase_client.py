@@ -1,6 +1,6 @@
 import os
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any, Dict, List, Optional
 
 import streamlit as st
@@ -12,9 +12,11 @@ import extra_streamlit_components as stx
 
 from supabase import create_client, Client
 
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/") + "/"
-SUPABASE_ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+from .env_validator import get_required_env, validate_supabase_url
+
+SUPABASE_URL = validate_supabase_url(get_required_env("SUPABASE_URL", "Supabase project URL"))
+SUPABASE_ANON_KEY = get_required_env("SUPABASE_ANON_KEY", "Supabase anonymous key")
+SUPABASE_SERVICE_ROLE_KEY = get_required_env("SUPABASE_SERVICE_ROLE_KEY", "Supabase service role key")
 
 # Server-side client (bypasses RLS). Use this in worker and server operations.
 svc: Client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -237,6 +239,29 @@ def oauth_pop_state(state: str) -> Optional[str]:
     # delete after read
     svc.table(_OAUTH_STATE_TABLE).delete().eq("state", state).execute()
     return data.get("code_verifier")
+
+
+def cleanup_expired_oauth_states() -> int:
+    """Clean up expired OAuth states to prevent table bloat.
+
+    This function should be called periodically (e.g., hourly cron job) or
+    automatically via a database trigger.
+
+    Returns:
+        Number of expired states deleted
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(seconds=_OAUTH_STATE_TTL_SECONDS)
+
+    try:
+        result = (
+            svc.table(_OAUTH_STATE_TABLE)
+            .delete()
+            .lt("created_at", cutoff.isoformat())
+            .execute()
+        )
+        return len(result.data) if result.data else 0
+    except Exception:
+        return 0
 
 
 def normalize_site_url(raw: str) -> str:
