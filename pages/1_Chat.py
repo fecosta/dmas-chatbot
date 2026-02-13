@@ -8,7 +8,7 @@ from anthropic import Anthropic
 from openai import OpenAI
 from supabase_auth.errors import AuthApiError
 
-from core.sidebar_ui import ensure_bootstrap_icons, render_sidebar
+from core.sidebar_ui import bi, ensure_bootstrap_icons, render_sidebar
 from core.supabase_client import (
     auth_sign_out,
     ensure_profile,
@@ -26,6 +26,18 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 # Environment defaults (Admin → Model can override at runtime)
 ENV_EMBED_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small").strip()
 ENV_CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "").strip()
+
+# Constants
+MAX_PROMPT_LENGTH = 4000
+MAX_MESSAGE_HISTORY_CHARS = 500
+MIN_PROMPT_LENGTH_FOR_OVERLAP = 40
+MIN_LEXICAL_OVERLAP = 2
+MIN_LEXICAL_OVERLAP_SHORT = 1
+MAX_TITLE_LENGTH = 50
+RECENT_USER_MESSAGES = 2
+RECENT_ASSISTANT_MESSAGES = 1
+RATE_LIMIT_MESSAGES_PER_MINUTE = 10
+RATE_LIMIT_WINDOW_SECONDS = 60
 
 DEFAULTS = {
     # Embeddings / retrieval
@@ -59,12 +71,6 @@ st.markdown(
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
     unsafe_allow_html=True,
 )
-
-apply_ui()
-
-def bi(name: str, size: str = "1em") -> str:
-    return f'<i class="bi bi-{name}" style="font-size:{size}; vertical-align:-0.125em;"></i>'
-
 
 def _user_email(u) -> str:
     if isinstance(u, dict):
@@ -164,14 +170,33 @@ def _load_model_settings() -> dict:
             pass
 
     embed_model = (s.get("embedding_model") or DEFAULTS["embedding_model"]).strip()
-    top_k = int(s.get("top_k") or DEFAULTS["top_k"])
-    min_score = float(s.get("min_score") or DEFAULTS["min_score"])
-    max_context_chars = int(s.get("max_context_chars") or DEFAULTS["max_context_chars"])
 
-    max_tokens = int(s.get("claude_max_tokens") or DEFAULTS["claude_max_tokens"])
-    temperature = float(
-        s.get("claude_temperature") if s.get("claude_temperature") is not None else DEFAULTS["claude_temperature"]
-    )
+    try:
+        top_k = int(s.get("top_k") or DEFAULTS["top_k"])
+    except (ValueError, TypeError):
+        top_k = DEFAULTS["top_k"]
+
+    try:
+        min_score = float(s.get("min_score") or DEFAULTS["min_score"])
+    except (ValueError, TypeError):
+        min_score = DEFAULTS["min_score"]
+
+    try:
+        max_context_chars = int(s.get("max_context_chars") or DEFAULTS["max_context_chars"])
+    except (ValueError, TypeError):
+        max_context_chars = DEFAULTS["max_context_chars"]
+
+    try:
+        max_tokens = int(s.get("claude_max_tokens") or DEFAULTS["claude_max_tokens"])
+    except (ValueError, TypeError):
+        max_tokens = DEFAULTS["claude_max_tokens"]
+
+    try:
+        temperature = float(
+            s.get("claude_temperature") if s.get("claude_temperature") is not None else DEFAULTS["claude_temperature"]
+        )
+    except (ValueError, TypeError):
+        temperature = DEFAULTS["claude_temperature"]
 
     system_prompt = s.get("system_prompt") or DEFAULTS["system_prompt"]
     answer_style = str(s.get("answer_style") or DEFAULTS["answer_style"])
@@ -211,10 +236,16 @@ def list_conversations_for_user(user_id: str) -> list[dict]:
 
 
 def create_conversation(user_id: str, title: str = "Chat") -> str:
-    r = svc.table("conversations").insert({"user_id": user_id, "title": title}).execute()
-    cid = r.data[0]["id"]
-    st.session_state["conversation_id"] = cid
-    return cid
+    try:
+        r = svc.table("conversations").insert({"user_id": user_id, "title": title}).execute()
+        if not r.data or len(r.data) == 0:
+            raise ValueError("Failed to create conversation: no data returned")
+        cid = r.data[0]["id"]
+        st.session_state["conversation_id"] = cid
+        return cid
+    except Exception as e:
+        st.error(f"Failed to create conversation: {e}")
+        raise
 
 
 def get_or_create_conversation(user_id: str) -> str:
@@ -234,6 +265,42 @@ def embed_query(q: str, embed_model: str):
     return resp.data[0].embedding
 
 
+def save_message(conversation_id: str, role: str, content: str) -> None:
+    """Save a message to the database with error handling."""
+    try:
+        svc.table("messages").insert({
+            "conversation_id": conversation_id,
+            "role": role,
+            "content": content
+        }).execute()
+    except Exception as e:
+        st.error(f"Failed to save message: {e}")
+        raise
+
+
+def check_rate_limit(user_id: str) -> bool:
+    """Check if user has exceeded rate limit. Returns True if allowed, False if rate limited."""
+    from time import time
+
+    if "rate_limit_timestamps" not in st.session_state:
+        st.session_state["rate_limit_timestamps"] = []
+
+    now = time()
+    # Remove timestamps older than the window
+    st.session_state["rate_limit_timestamps"] = [
+        ts for ts in st.session_state["rate_limit_timestamps"]
+        if now - ts < RATE_LIMIT_WINDOW_SECONDS
+    ]
+
+    # Check if limit exceeded
+    if len(st.session_state["rate_limit_timestamps"]) >= RATE_LIMIT_MESSAGES_PER_MINUTE:
+        return False
+
+    # Add current timestamp
+    st.session_state["rate_limit_timestamps"].append(now)
+    return True
+
+
 # ---------- App start ----------
 
  # ------------------------- Auth -------------------------
@@ -251,9 +318,18 @@ user_id = user["id"]
 role = st.session_state.get("role", "user")
 is_admin = role == "admin"
 
-settings = _load_model_settings()
+# Cache model settings in session (with TTL of 5 minutes)
+from time import time
+if "cached_settings" not in st.session_state or "settings_cache_time" not in st.session_state:
+    st.session_state["cached_settings"] = _load_model_settings()
+    st.session_state["settings_cache_time"] = time()
+elif time() - st.session_state["settings_cache_time"] > 300:  # 5 minutes
+    st.session_state["cached_settings"] = _load_model_settings()
+    st.session_state["settings_cache_time"] = time()
 
-def _truncate_title(s: str, max_len: int = 50) -> str:
+settings = st.session_state["cached_settings"]
+
+def _truncate_title(s: str, max_len: int = MAX_TITLE_LENGTH) -> str:
     s = " ".join((s or "").strip().split())
     if not s:
         return "Chat"
@@ -283,7 +359,7 @@ def maybe_autotitle_conversation(conversation_id: str, prompt: str) -> None:
         if current_title.lower() != "chat":
             return  # already titled
 
-        new_title = _truncate_title(prompt, 50)
+        new_title = _truncate_title(prompt, MAX_TITLE_LENGTH)
         if new_title.lower() == "chat":
             return
 
@@ -366,7 +442,7 @@ for m in msgs:
 
 # Keep a tiny, safer tail of recent turns to preserve local coherence
 # without resurfacing early-topic assistant content.
-# Strategy: last 2 USER messages + last 1 ASSISTANT message (if present).
+# Strategy: last N USER messages + last M ASSISTANT messages (if present).
 recent_turns = []
 user_kept = 0
 assistant_kept = 0
@@ -378,22 +454,22 @@ for m in reversed(msgs or []):
         continue
 
     if role == "user":
-        if user_kept >= 2:
+        if user_kept >= RECENT_USER_MESSAGES:
             continue
         user_kept += 1
     else:
-        if assistant_kept >= 1:
+        if assistant_kept >= RECENT_ASSISTANT_MESSAGES:
             continue
         assistant_kept += 1
 
     # Cap per-message length to keep prompts tight
-    if len(content) > 500:
-        content = content[:497].rstrip() + "…"
+    if len(content) > MAX_MESSAGE_HISTORY_CHARS:
+        content = content[:MAX_MESSAGE_HISTORY_CHARS - 3].rstrip() + "…"
 
     recent_turns.append(f"{role.upper()}: {content}")
 
     # Stop early once we have enough
-    if user_kept >= 2 and assistant_kept >= 1:
+    if user_kept >= RECENT_USER_MESSAGES and assistant_kept >= RECENT_ASSISTANT_MESSAGES:
         break
 
 # Reverse back to chronological order
@@ -402,6 +478,19 @@ recent_history_block = "\n".join(reversed(recent_turns))
 prompt = st.chat_input("Ask a question…") 
 
 if prompt:
+    # Validate message length
+    if len(prompt) > MAX_PROMPT_LENGTH:
+        st.error(f"Message too long. Please limit your message to {MAX_PROMPT_LENGTH} characters.")
+        st.stop()
+
+    # Check rate limit
+    if not check_rate_limit(user_id):
+        st.error(
+            f"Too many messages. Please wait a moment before sending more messages. "
+            f"(Limit: {RATE_LIMIT_MESSAGES_PER_MINUTE} messages per {RATE_LIMIT_WINDOW_SECONDS} seconds)"
+        )
+        st.stop()
+
     detected_lang = detect_user_language(prompt)
     prev_lang = st.session_state.get("conversation_lang")
 
@@ -437,19 +526,17 @@ if prompt:
                 "or I can answer based on the documents you uploaded."
             )
 
-        svc.table("messages").insert({"conversation_id": cid, "role": "user", "content": prompt}).execute()
+        save_message(cid, "user", prompt)
         with st.chat_message("user"):
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
             st.markdown(answer)
 
-        svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
+        save_message(cid, "assistant", answer)
         st.stop()
 
-    svc.table("messages").insert(
-        {"conversation_id": cid, "role": "user", "content": prompt}
-    ).execute()
+    save_message(cid, "user", prompt)
 
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -491,7 +578,7 @@ if prompt:
             # This helps avoid the model "bringing back" old topics.
             overlap = lexical_overlap_count(prompt, txt)
             # For very short prompts, allow small overlap; otherwise require more.
-            min_overlap = 1 if len(prompt.strip()) < 40 else 2
+            min_overlap = MIN_LEXICAL_OVERLAP_SHORT if len(prompt.strip()) < MIN_PROMPT_LENGTH_FOR_OVERLAP else MIN_LEXICAL_OVERLAP
             if overlap < min_overlap:
                 continue
 
@@ -524,7 +611,7 @@ if prompt:
                     "Try rephrasing your question or upload a document that covers this topic."
                 )
             st.markdown(answer)
-            svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
+            save_message(cid, "assistant", answer)
         else:
             sys = (
                 enforced_rules_header(answer_lang)
@@ -600,7 +687,7 @@ if prompt:
                     pass
 
             st.markdown(answer)
-            svc.table("messages").insert({"conversation_id": cid, "role": "assistant", "content": answer}).execute()
+            save_message(cid, "assistant", answer)
 
             if settings.get("include_citations", True):
                 with st.expander("Sources used"):

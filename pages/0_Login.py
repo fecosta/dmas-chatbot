@@ -23,13 +23,15 @@ st.set_page_config(page_title="Login", page_icon="./static/shield-lock.svg", lay
 ensure_bootstrap_icons()
 render_sidebar()
 
-restore_supabase_session()
-
 # Bootstrap Icons (visual-only)
 st.markdown(
     '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">',
     unsafe_allow_html=True,
 )
+restore_supabase_session()
+
+# Constants
+CHAT_PAGE = "pages/1_Chat.py"
 
 st.markdown(f"# {bi('shield-lock')} Login", unsafe_allow_html=True)
 st.caption("Sign in to access chat and your documents.")
@@ -41,7 +43,7 @@ if redir and st.session_state.get("user"):
 
 # If already authenticated (and not currently handling an OAuth callback), go straight to Chat.
 if st.session_state.get("user") and not st.query_params.get("code"):
-    st.switch_page("pages/1_Chat.py")
+    st.switch_page(CHAT_PAGE)
 
 
 # --- Google OAuth (PKCE) ---
@@ -58,6 +60,25 @@ def _make_pkce() -> tuple[str, str]:
     verifier = _b64url(secrets.token_bytes(32))
     challenge = _b64url(hashlib.sha256(verifier.encode("utf-8")).digest())
     return verifier, challenge
+
+
+def _extract_user_from_session(session) -> dict:
+    """Extract user object from Supabase session regardless of response format."""
+    # Support different supabase-py return shapes
+    user_obj = getattr(session, "user", None) or getattr(getattr(session, "session", None), "user", None)
+    if not user_obj and isinstance(session, dict):
+        user_obj = session.get("user") or (session.get("session") or {}).get("user")
+
+    if not user_obj:
+        raise ValueError("No user object found in session response")
+
+    user_id = getattr(user_obj, "id", None) or user_obj.get("id")
+    email = getattr(user_obj, "email", None) or user_obj.get("email")
+
+    if not user_id:
+        raise ValueError("User ID not found in session response")
+
+    return {"id": user_id, "email": email or ""}
 
 
 # Handle OAuth return (?code=...&oauth_nonce=...)
@@ -79,26 +100,15 @@ if code and oauth_nonce:
         )
         save_supabase_session(session.session if hasattr(session, "session") else session)
 
-        # Support different supabase-py return shapes
-        user_obj = getattr(session, "user", None) or getattr(getattr(session, "session", None), "user", None)
-        if not user_obj and isinstance(session, dict):
-            user_obj = session.get("user") or (session.get("session") or {}).get("user")
-
-        if not user_obj:
-            st.error("Google login succeeded but no user was returned.")
-            st.stop()
-
-        user_id = getattr(user_obj, "id", None) or user_obj.get("id")
-        email = getattr(user_obj, "email", None) or user_obj.get("email")
-
-        st.session_state["user"] = {"id": user_id, "email": email}
-        profile = ensure_profile(user_id, email or "")
+        user = _extract_user_from_session(session)
+        st.session_state["user"] = user
+        profile = ensure_profile(user["id"], user["email"])
         st.session_state["role"] = profile.get("role", "user")
 
         # Clear the callback params so reruns don't re-exchange
         st.query_params.clear()
         # Let CookieManager flush cookie writes, then redirect on the next run.
-        st.session_state["_post_login_redirect"] = "pages/1_Chat.py"
+        st.session_state["_post_login_redirect"] = CHAT_PAGE
         st.rerun()
     except Exception as e:
         st.error(f"Google login failed: {e}")
